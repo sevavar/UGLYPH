@@ -123,7 +123,7 @@ function draw() {
 
     // GUI Text
     text(
-      "UGLYPH 0.4\n06/12/23\n\n1–5 brush force\n[ / ] brush size\n- / + stroke width\nA attract / repulse\nF fill mode\nI invert\nX explode\nR reload\nP save PNG\nG save GIF\nS save SVG (new!)\n? Recolor (new!)",
+      "UGLYPH 0.4\n06/12/23\n\n1–5 brush force\n[ / ] brush size\n- / + stroke width\nA attract / repulse\nF fill mode\nI invert\nX explode\nR reload\nP save PNG\nG save GIF\nS save SVG (new!)\n? recolor (new!)",
       10,
       10
     );
