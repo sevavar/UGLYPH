@@ -266,7 +266,8 @@ function copyAndSaveSVG() {
   let svgHeight = windowHeight;
   svg.setAttribute('width', svgWidth);
   svg.setAttribute('height', svgHeight);
-  
+  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.style.display = 'normal';
 
   // Calculate the center coordinates
@@ -283,6 +284,7 @@ function copyAndSaveSVG() {
   let svgBlob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
+
 
 // Helper function to save a Blob
 function saveBlob(blob, fileName) {
