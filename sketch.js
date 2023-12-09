@@ -270,6 +270,13 @@ function copyAndSaveSVG() {
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.style.display = 'normal';
 
+  // Draw the background rectangle
+  let backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  backgroundRect.setAttribute('width', svgWidth);
+  backgroundRect.setAttribute('height', svgHeight);
+  backgroundRect.setAttribute('fill', bgColor.toString());
+  svg.appendChild(backgroundRect);
+
   // Calculate the center coordinates
   let centerX = svgWidth / 2;
   let centerY = svgHeight / 2;
@@ -284,6 +291,7 @@ function copyAndSaveSVG() {
   let svgBlob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
+
 
 
 // Helper function to save a Blob
