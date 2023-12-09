@@ -123,7 +123,7 @@ function draw() {
 
     // GUI Text
     text(
-      "UGLYPH 0.4\n06/12/23\n\n1–5 brush force\n[ / ] brush size\n- / + stroke width\nA attract / repulse\nF fill mode\nI invert\nX explode\nR reload\nP save PNG\nG save GIF\nS save SVG (new!)\n? recolor (new!)",
+      "UGLYPH 0.42\n09/12/23\n\n1–5 brush force\n[ / ] brush size\n- / + stroke width\nA attract / repulse\nF fill mode\nI invert / b&w\nX explode\nP save PNG\nG save GIF\nS save SVG (new!)\n? recolor (new!)\n\nR reload\n",
       10,
       10
     );
@@ -266,7 +266,6 @@ function copyAndSaveSVG() {
   let svgHeight = windowHeight;
   svg.setAttribute('width', svgWidth);
   svg.setAttribute('height', svgHeight);
-  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.style.display = 'normal';
 
@@ -274,7 +273,7 @@ function copyAndSaveSVG() {
   let backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   backgroundRect.setAttribute('width', svgWidth);
   backgroundRect.setAttribute('height', svgHeight);
-  backgroundRect.setAttribute('fill', bgColor.toString());
+  backgroundRect.setAttribute('fill', bgColor.levels.length === 3 ? `rgb(${bgColor.levels.join(',')})` : `rgba(${bgColor.levels.join(',')},${bgColor.levels[3] / 255})`);
   svg.appendChild(backgroundRect);
 
   // Calculate the center coordinates
@@ -285,12 +284,14 @@ function copyAndSaveSVG() {
   let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   let d = copiedPoints.map(point => `L${point.x + centerX} ${point.y + centerY}`).join(' ');
   path.setAttribute('d', `M${copiedPoints[0].x + centerX} ${copiedPoints[0].y + centerY} ${d} Z`);
+  path.setAttribute('fill', fillColor.toString());
   svg.appendChild(path);
 
   // Save the SVG file
-  let svgBlob = new Blob([svg.outerHTML], { type: 'image/svg+xml' });
+  let svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
+
 
 
 
