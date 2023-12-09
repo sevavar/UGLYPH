@@ -269,16 +269,16 @@ function copyAndSaveSVG() {
   svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   svg.style.display = 'normal';
 
-  // Draw the background rectangle
-  let backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  backgroundRect.setAttribute('width', svgWidth);
-  backgroundRect.setAttribute('height', svgHeight);
-  backgroundRect.setAttribute('fill', bgColor.levels.length === 3 ? `rgb(${bgColor.levels.join(',')})` : `rgba(${bgColor.levels.join(',')},${bgColor.levels[3] / 255})`);
-  svg.appendChild(backgroundRect);
-
   // Calculate the center coordinates
   let centerX = svgWidth / 2;
   let centerY = svgHeight / 2;
+
+  // Add background rectangle
+  let backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  backgroundRect.setAttribute('width', '100%');
+  backgroundRect.setAttribute('height', '100%');
+  backgroundRect.setAttribute('fill', bgColor.toString());
+  svg.appendChild(backgroundRect);
 
   // Draw the copied shape in the SVG, centered
   let path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -291,6 +291,7 @@ function copyAndSaveSVG() {
   let svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
+
 
 
 
