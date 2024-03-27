@@ -2,55 +2,68 @@
 let bgColor; // Background color
 let fillColor; // Fill color
 let fillMode; // Fill mode ("filled" or "outline")
-let strokeW; // Stroke weight (outline thickness)
-let cursorStrokeW = 3; // Stroke weight for the cursor
+let strokeW = 3; // Stroke weight (outline thickness)
+let cursorStrokeW; // Stroke weight for the cursor
 let cursorColor = 'red';
 
 // UI
 let textOpacity = 255; // Text opacity
 let showUi = true; // Flag to show or hide the UI
-let guiTextColor = 'white';
+let guiTextColor = '#bababa';
 
 // Blob
 let points = []; // Array to store blob vertex points
-let amount; // Number of blob points
-let blobSize; // Size of the blob
+let amount = 3000; // Number of blob points
+let blobSize = 600; // Size of the blob
+let noiseScale = 0.004;
+let smoothingEnabled = false;
 
 // Modifier
 let currentMode = "attract"; // Current mode for brush interaction ("attract" or "repulse")
-let brushSize; // Size of the brush
+let brushSize = 100; // Size of the brush
 let speed; // Speed of brush interaction
 let smoothing; // Smoothing factor for blob
 
+
 function setup() {
-  frameRate(30);
+  frameRate(60);
   createCanvas(windowWidth, windowHeight);
+  generateShape();
   noCursor();
+
+//  let resetButton = createButton('Reset (Esc)');
+//  resetButton.position(100,0);
+//  resetButton.size(125, 20);
+//  resetButton.mousePressed(reloadWindow);
+  
+//    let recolorButton = createButton('Recolor (R)');
+//  recolorButton.position(100,20);
+//  recolorButton.size(125, 20);
+//  recolorButton.mousePressed(recolorBlobAndBackground);
+  
+//  let bwButton = createButton('Black & White (I)');
+//  bwButton.position(100,40);
+//  bwButton.size(125, 20);
+//  bwButton.mousePressed(invertColors);
+  
   
   // Initialize colors
-  bgColor = color(0); // Set background color to black
-  fillColor = color(255); // Set fill color to white
+  bgColor = color(255); // Set background color to black
+  fillColor = color(0); // Set fill color to white
   fill(255); // Set default fill color
   fillMode = "filled"; // Default fill mode
-  strokeW = 1; // Default stroke weight (outline thickness)
 
   // Initialize blob parameters
-  amount = 20000; // Number of blob points
-  blobSize = 300; // Size of the blob
 
   // Initialize brush parameters
-  brushSize = 40; // Size of the brush
-  speed = 0.75; // Speed of brush interaction
-  smoothing = 0.0001; // Smoothing factor for blob
-
+  speed = 0.05; // Speed of brush interaction
+  smoothing = 1; // Smoothing factor for blob
   // Blob vertex array generation
-  for (let i = 0; i < amount; i++) {
-    let angle = map(i, 0, amount / 10, 0, PI);
-    let x = blobSize * cos(angle);
-    let y = blobSize * sin(angle);
-    points.push({ x: x, y: y });
-  }
+
+    recolorBlobAndBackground();
+  
 }
+
 
 function draw() {
   translate(width / 2, height / 2);
@@ -65,20 +78,21 @@ function draw() {
     fill(bgColor);
     stroke(fillColor);
   }
-
+ if (smoothingEnabled) {
   // Blob smoothing
-  for (let i = 0; i < points.length; i++) {
-    let prev = points[(i - 1 + points.length) % points.length];
+ for (let i = 0; i < points.length; i++) {
+   let prev = points[(i - 1 + points.length) % points.length];
     let curr = points[i];
     let next = points[(i + 1) % points.length];
 
     // Smoothing calculation
-    let smoothedX = (prev.x + smoothing * curr.x + next.x) / (2 + smoothing);
-    let smoothedY = (prev.y + smoothing * curr.y + next.y) / (2 + smoothing);
+    let smoothedX = (prev.x + smoothing * curr.x + next.x) / 3;
+    let smoothedY = (prev.y + smoothing * curr.y + next.y) / 3;
 
     curr.x = smoothedX;
     curr.y = smoothedY;
   }
+ }
 
   // Blob drawing
   beginShape();
@@ -88,7 +102,7 @@ function draw() {
   endShape(CLOSE);
 
   // Brush
-  if (mouseIsPressed === true) {
+  if (mouseIsPressed === false) {
     // Vertex attraction or repulsion
     for (let i = 0; i < points.length; i++) {
       let d = dist(mouseX - width / 2, mouseY - height / 2, points[i].x, points[i].y);
@@ -102,14 +116,16 @@ function draw() {
   }
 
   // Brush cursor overlay
-  noFill();
-  stroke(cursorColor);
-  strokeWeight(cursorStrokeW);
+ // fill(guiTextColor);
+    fill(100,100,100, 50);
+    noStroke();
+ // stroke(cursorColor);
+ // strokeWeight(cursorStrokeW);
   circle(mouseX - width / 2, mouseY - height / 2, brushSize * 2); // Outer cursor
 
   if (mouseIsPressed === true) {
-    fill(cursorColor);
-    stroke(cursorColor);
+    fill(guiTextColor);
+    //stroke(cursorColor);
     circle(mouseX - width / 2, mouseY - height / 2, brushSize / 1.6); // Active cursor
   }
 
@@ -123,7 +139,7 @@ function draw() {
 
     // GUI Text
     text(
-      "UGLYPH 0.42\n09/12/23\n\n1–5 brush force\n[ / ] brush size\n- / + stroke width\nA attract / repulse\nF fill mode\nI invert / b&w\nX explode\nP save PNG\nG save GIF\nS save SVG (new!)\n? recolor (new!)\n\nR reload\n",
+      "UGLYPH\nv0.5 27/03/24\n\nEsc Restart\n\[ / ] Brush Size \n- / + Stroke Width\nA Attract / Repulse\nF Fill mode\nI Invert / b&w\nX Explode\nP Save PNG\nG Save GIF\nS Save SVG\nR Recolor\nH Hide UI (new!)\nM Smooth (new!)",
       10,
       10
     );
@@ -132,9 +148,6 @@ function draw() {
 
 function keyPressed() {
   switch (keyCode) {
-    case 72: // 'H'
-      toggleTextVisibility();
-      break;
     case 65: // 'A'
       toggleAttractionRepulsion();
       break;
@@ -145,9 +158,9 @@ function keyPressed() {
     case 53: // '5'
       setBrushSpeed((keyCode - 48) / 10);
       break;
-    case 82: // 'R'
-      reloadWindow();
-      break;
+   // case 82: // 'R'
+     // reloadWindow();
+      //break;
     case 221: // ']'
       adjustBrushSize(10);
       break;
@@ -166,29 +179,43 @@ function keyPressed() {
     case 70: // 'F'
       toggleFillMode();
       break;
+      case 72: // 'H'
+      toggleTextGUI();
+      break;
     case 73: // 'I'
-      invertColors();
+      invertColors(); break;
+      case 77: // 'M'
+      toggleSmoothing();
       break;
     case 88: // 'X'
-      explode();
-      break;
+      explode(); break;
     case 71: // 'G'
-      saveGif('uglyph.gif', 3);
-      break;
+      saveGif('uglyph.gif', 2);  break;//
     case 83: // 'S'
       copyAndSaveSVG();
       break;
-    case 191: // '/'
-    case 191: // '?'
-      recolorBlobAndBackground();
+    case 82: recolorBlobAndBackground(); break;
+    case 27: // 'Esc'
+      reloadWindow();
       break;
   }
 }
 
-// Clear key control functions
-function toggleTextVisibility() {
-  textOpacity = (textOpacity === 0) ? 255 : 0;
+function generateShape() {
+  
+  for (let i = 0; i < amount; i++) {
+    let angle = map(i, 0, amount, 0, TWO_PI);
+    let radius = (blobSize) * noise(noiseScale * i); // Adjust noise scale for irregularity
+    let x = windowWidth / 2 + radius * cos(angle)-0.5*width;
+    let y = windowHeight / 2 + radius * sin(angle)-0.5*height;
+    points.push({ x: x, y: y });
+  }
 }
+
+function toggleSmoothing() {
+  smoothingEnabled = !smoothingEnabled;
+}
+
 
 function toggleAttractionRepulsion() {
   currentMode = (currentMode === 'repulse') ? 'attract' : 'repulse';
@@ -225,9 +252,10 @@ function toggleFillMode() {
 }
 
 function invertColors() {
-  bgColor = (bgColor === 'white') ? 'black' : 'white';
-  fillColor = (fillColor === 'black') ? 'white' : 'black';
-  guiTextColor = (guiTextColor === 'black') ? 'white' : 'black';
+
+  guiTextColor = (fillColor  === 'white') ? 'grey' : 'white';
+  bgColor = (bgColor === 'black') ? 'white' : 'black';
+  fillColor = (fillColor === 'white') ? 'black' : 'white';
   cursorColor = 'red'
 }
 
@@ -249,10 +277,10 @@ function explode() {
   let centerY = 0;
 
   for (let i = 0; i < points.length; i++) {
-    points[i].x += random(-blobSize, blobSize);
-    points[i].y += random(-blobSize, blobSize);
-    points[i].x += (centerX - points[i].x) * 0.1 * speed;
-    points[i].y += (centerY - points[i].y) * 0.1 * speed;
+    points[i].x += random(-100, 100);
+    points[i].y += random(-100, 100);
+  //  points[i].x += (centerX - points[i].x) * 0.1 * speed;
+  //  points[i].y += (centerY - points[i].y) * 0.1 * speed;
   }
 }
 
@@ -291,9 +319,6 @@ function copyAndSaveSVG() {
   let svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
-
-
-
 
 
 // Helper function to save a Blob
