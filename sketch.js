@@ -4,7 +4,7 @@ let dotColor = 'white';
 let bgColor; // Background color
 let fillColor; // Fill color
 let fillMode; // Fill mode ("filled", "outline", "worm")
-let strokeW = 50; // Stroke weight (outline thickness)
+let strokeW = 100; // Stroke weight (outline thickness)
 let cursorStrokeW; // Stroke weight for the cursor
 let cursorColor = 'red';
 let edgeColor = 'black';
@@ -143,7 +143,7 @@ function draw() {
 
     // GUI Text
     text(
-      "UGLYPH\nv0.6 26/06/24\n\nEsc Restart\n\[ / ] Brush Size \n- / + Stroke Width\nA Attract / Repulse\nF Fill mode\nI Invert / b&w\nX Explode\nP Save PNG\nG Save GIF\nS Save SVG\nR Recolor\nH Hide UI\nM Stop",
+      "UGLYPH\nv0.61 27/06/24\n\nEsc Restart\n\[ / ] Brush Size \n- / + Stroke Width\nA Attract / Repulse\nF Fill mode\nI Invert / b&w\nX Explode\nP Save PNG\nG Save GIF\nS Save SVG\nR Recolor\nH Hide UI\nM Stop",
       10,
       10
     );
