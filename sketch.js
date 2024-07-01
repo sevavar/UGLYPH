@@ -143,7 +143,7 @@ function draw() {
 
     // GUI Text
     text(
-      "UGLYPH\nv0.61 27/06/24\n\nEsc Restart\n\[ / ] Brush Size \n- / + Stroke Width\nA Attract / Repulse\nF Fill mode\nI Invert / b&w\nX Explode\nP Save PNG\nG Save GIF\nS Save SVG\nR Recolor\nH Hide UI\nM Stop",
+      "UGLYPH\nv0.61 01/07/24\n\nEsc Restart\n\[ / ] Brush Size \n- / + Stroke Width\nA Attract / Repulse\nF Fill mode\nI Invert / b&w\nX Explode\nP Save PNG\nG Save GIF\nS Save SVG\nR Recolor\nH Hide UI\nM Stop",
       10,
       10
     );
@@ -320,11 +320,16 @@ function copyAndSaveSVG() {
   let centerX = svgWidth / 2;
   let centerY = svgHeight / 2;
 
+  // Convert color to RGB string
+  function colorToString(c) {
+    return `rgb(${red(c)},${green(c)},${blue(c)})`;
+  }
+
   // Add background rectangle
   let backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   backgroundRect.setAttribute('width', '100%');
   backgroundRect.setAttribute('height', '100%');
-  backgroundRect.setAttribute('fill', bgColor.toString());
+  backgroundRect.setAttribute('fill', colorToString(bgColor));
   svg.appendChild(backgroundRect);
 
   // Draw the copied shape in the SVG, centered
@@ -333,11 +338,11 @@ function copyAndSaveSVG() {
   path.setAttribute('d', `M${copiedPoints[0].x + centerX} ${copiedPoints[0].y + centerY} ${d} Z`);
 
   if (fillMode === "filled") {
-    path.setAttribute('fill', fillColor.toString());
+    path.setAttribute('fill', colorToString(fillColor));
     path.setAttribute('stroke', 'none');
   } else if (fillMode === "outline") {
     path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', fillColor.toString());
+    path.setAttribute('stroke', colorToString(fillColor));
     path.setAttribute('stroke-width', strokeW);
   } else if (fillMode === "worm") {
     path.setAttribute('fill', 'none');
@@ -357,8 +362,8 @@ function copyAndSaveSVG() {
       circle.setAttribute('cx', copiedPoints[i].x + centerX);
       circle.setAttribute('cy', copiedPoints[i].y + centerY);
       circle.setAttribute('r', ellipseSize / 2);
-      circle.setAttribute('fill', fillColor.toString());
-      circle.setAttribute('stroke', edgeColor.toString());
+      circle.setAttribute('fill', colorToString(fillColor));
+      circle.setAttribute('stroke', colorToString(edgeColor));
       circle.setAttribute('stroke-width', 1);
       svg.appendChild(circle);
     }
@@ -368,6 +373,40 @@ function copyAndSaveSVG() {
   let svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' });
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
+
+// Helper function to save a Blob
+function saveBlob(blob, fileName) {
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  link.click();
+}
+
+// Function to create a filename with the specified format
+function createFileName(prefix, extension) {
+  let now = new Date();
+  let datePart = `${now.getDate()}${now.getMonth() + 1}${now.getFullYear()}`;
+  let timePart = `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+  return `${prefix}_${datePart}${timePart}.${extension}`;
+}
+
+
+// Helper function to save a Blob
+function saveBlob(blob, fileName) {
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  link.click();
+}
+
+// Function to create a filename with the specified format
+function createFileName(prefix, extension) {
+  let now = new Date();
+  let datePart = `${now.getDate()}${now.getMonth() + 1}${now.getFullYear()}`;
+  let timePart = `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+  return `${prefix}_${datePart}${timePart}.${extension}`;
+}
+
 
 // Helper function to save a Blob
 function saveBlob(blob, fileName) {
@@ -407,3 +446,4 @@ function createFileName(prefix, extension) {
 function toggleTextGUI() {
   showUi = !showUi;
 }
+
