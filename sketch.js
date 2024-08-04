@@ -52,35 +52,35 @@ let count = 0;
 let frameSkip = 2; // Adjust this value to control frame skipping
 let frameCounter = 0;
 
-function preload() {
-    HME.createH264MP4Encoder().then(enc => {
-        encoder = enc;
-        encoder.outputFilename = 'test';
+//function preload() {
+   // HME.createH264MP4Encoder().then(enc => {
+     //   encoder = enc;
+       // encoder.outputFilename = 'test';
 
         // Maximum width for downscaling
-        const maxWidth = 1080;
+        //const maxWidth = 1080;
 
         // Get the dimensions of the canvas
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
+        //const canvasWidth = canvas.width;
+        //const canvasHeight = canvas.height;
 
         // Calculate the new dimensions while maintaining aspect ratio
-        let newWidth = canvasWidth;
-        let newHeight = canvasHeight;
+        //let newWidth = canvasWidth;
+        //let newHeight = canvasHeight;
 
-        if (canvasWidth > maxWidth) {
-            newWidth = maxWidth;
-            newHeight = (canvasHeight / canvasWidth) * newWidth;
-        }
+        //if (canvasWidth > maxWidth) {
+          //  newWidth = maxWidth;
+           // newHeight = (canvasHeight / canvasWidth) * newWidth;
+        //}
 
-        encoder.width = newWidth;
-        encoder.height = newHeight;
-        encoder.frameRate = frate;
-        encoder.kbps = 20000; // video quality
-        encoder.groupOfPictures = 5; // lower if you have fast actions.
-        encoder.initialize();
-    });
-}
+    //    encoder.width = newWidth;
+    //    encoder.height = newHeight;
+     //   encoder.frameRate = frate;
+     //   encoder.kbps = 20000; // video quality
+     //   encoder.groupOfPictures = 5; // lower if you have fast actions.
+     //   encoder.initialize();
+  //  });
+//}
 function setup() {
   frameRate(60);
   createCanvas(windowWidth, windowHeight);
@@ -191,7 +191,7 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.recolor = createButton(`
-    <span class="left-align">⚄</span>
+    <span class="left-align">⛬</span>
     <span class="center-align">Recolor</span>
     <span class="right-align">R</span>`);
   
@@ -212,7 +212,7 @@ function createUI() {
   
   
   buttons.sPNG = createButton(`
-    <span class="left-align">🖫</span>
+    <span class="left-align">⭳</span>
     <span class="center-align">Save&nbsp;PNG</span>
     <span class="right-align">P</span>`);
   
@@ -222,7 +222,7 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.sSVG = createButton(`
-    <span class="left-align">🖫</span>
+    <span class="left-align">⭳</span>
     <span class="center-align">Save&nbsp;SVG</span>
     <span class="right-align">S</span>`);
   buttons.sSVG.position(10,  NextButtonPosY);
@@ -231,7 +231,7 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.sGIF = createButton(`
-    <span class="left-align">🖫</span>
+    <span class="left-align">⭳</span>
     <span class="center-align">Save&nbsp;GIF</span>
     <span class="right-align">G</span>`);
   buttons.sGIF.position(10,  NextButtonPosY);
