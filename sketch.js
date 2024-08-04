@@ -1,11 +1,7 @@
 // Blob
 let points = []; // Array to store blob vertex points
 let amount = 2000; // Number of blob points
-let blobSize = 600; // Size of the blob
-let noiseScale = 0.1;
-let smoothingEnabled = true;
-let amplitude = 0.1;
-let frequency = 0.5;
+let blobSize = 300; // Size of the blob
 let showDots = true; // Variable to manage dot visibility
 
 // Blob Style
@@ -26,6 +22,14 @@ let speed = 10; // Speed of brush interaction
 let smoothing = 1; // Smoothing factor for blob
 let explosionForce = 100;
 
+//Mutation
+let velocities = [];
+let mutationSpeed = 20;
+let noiseScale = 0.000001;
+let smoothingEnabled = true;
+let amplitude = 0.1;
+let frequency = 0.001;
+
 // UI
 let sliders = {};
 let buttons = {};
@@ -44,53 +48,53 @@ let currentWidth, currentHeight;
 //let cheight = currentHeight;
 let button;
 let encoder;
-const frate = 30 // frame rate;
-const numFrames = 100 // num of frames to record;
+const frate = 25 // frame rate;
+const numFrames = 250 // num of frames to record;
 let recording = false;
 let recordedFrames = 0;
 let count = 0;
-let frameSkip = 2; // Adjust this value to control frame skipping
+let frameSkip = 1; // Adjust this value to control frame skipping
 let frameCounter = 0;
 
-//function preload() {
-   // HME.createH264MP4Encoder().then(enc => {
-     //   encoder = enc;
-       // encoder.outputFilename = 'test';
+function preload() {
+    HME.createH264MP4Encoder().then(enc => {
+        encoder = enc;
+        encoder.outputFilename = 'test';
 
         // Maximum width for downscaling
-        //const maxWidth = 1080;
+        const maxWidth = 1080;
 
         // Get the dimensions of the canvas
-        //const canvasWidth = canvas.width;
-        //const canvasHeight = canvas.height;
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
 
         // Calculate the new dimensions while maintaining aspect ratio
-        //let newWidth = canvasWidth;
-        //let newHeight = canvasHeight;
+        let newWidth = canvasWidth;
+        let newHeight = canvasHeight;
 
-        //if (canvasWidth > maxWidth) {
-          //  newWidth = maxWidth;
-           // newHeight = (canvasHeight / canvasWidth) * newWidth;
-        //}
+        if (canvasWidth > maxWidth) {
+            newWidth = maxWidth;
+            newHeight = (canvasHeight / canvasWidth) * newWidth;
+        }
 
-    //    encoder.width = newWidth;
-    //    encoder.height = newHeight;
-     //   encoder.frameRate = frate;
-     //   encoder.kbps = 20000; // video quality
-     //   encoder.groupOfPictures = 5; // lower if you have fast actions.
-     //   encoder.initialize();
-  //  });
-//}
+        encoder.width = newWidth;
+        encoder.height = newHeight;
+        encoder.frameRate = frate;
+        encoder.kbps = 20000; // video quality
+        encoder.groupOfPictures = 5; // lower if you have fast actions.
+        encoder.initialize();
+    });
+}
 function setup() {
   frameRate(60);
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
   strokeW = random (1,180)
-  amount = random (100,5000)
+  amount = random (100,2000)
   noCursor();
   generateShape();
-  fillMode = "outline"; // Default fill mode
+  fillMode = "filled"; // Default fill mode
   // Blob vertex array generation
 
   recolor();
@@ -101,7 +105,7 @@ function setup() {
 function createUI() {
   
   
-  let label1 = createP ('UGLYPH<br>v0.7a 3/8/24');
+  let label1 = createP ('UGLYPH<br>v0.7a 03/8/24');
   label1.position(10, -5);
   label1.class('text');
   
@@ -140,7 +144,7 @@ function createUI() {
   label4.position(10, 200);
   label4.class('text');
 
-  sliders.amount = createSlider(100, 5000, amount);
+  sliders.amount = createSlider(100, 2000, amount);
   sliders.amount.position(10, 230);
   sliders.amount.class('slider');
   sliders.amount.input(() => {
@@ -239,14 +243,14 @@ function createUI() {
   buttons.sGIF.mousePressed(recordGIF);
   NextButtonPosY += uiDist;
   
- // buttons.sMP4 = createButton(`
- //   <span class="left-align">🖫</span>
- //   <span class="center-align">Save&nbsp;MP4</span>
- //   <span class="right-align">V</span>`);
- // buttons.sMP4.position(10,  NextButtonPosY);
- // buttons.sMP4.class('button');
- // buttons.sMP4.mousePressed(() => recording = true)
- // NextButtonPosY += uiDist;
+  buttons.sMP4 = createButton(`
+    <span class="left-align">⭳</span>
+    <span class="center-align">Save&nbsp;MP4</span>
+    <span class="right-align">V</span>`);
+  buttons.sMP4.position(10,  NextButtonPosY);
+  buttons.sMP4.class('button');
+  buttons.sMP4.mousePressed(() => recording = true)
+  NextButtonPosY += uiDist;
   
   
   buttons.reload = createButton(`
@@ -262,6 +266,7 @@ function createUI() {
 
 function generateShape() {
   points = [];
+  velocities = [];
   for (let i = 0; i < amount; i++) {
     let x = windowWidth / 2;
     let y = windowHeight / 2;
@@ -270,6 +275,7 @@ function generateShape() {
     x = windowWidth / 2 + radius * cos(angle) - 0.5 * width;
     y = windowHeight / 2 + radius * sin(angle) - 0.5 * height;
     points.push({ x: x, y: y });
+    velocities.push({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) });
   }
 }
 function setBrushSpeed(speedValue) {
@@ -342,9 +348,9 @@ function keyPressed() {
     case 83: // 'S'
       copyAndSaveSVG();
       break;
-   //   case 86: //'V'
-   //   recording = true;
-   //   break;
+      case 86: //'V'
+      recording = true;
+      break;
     case 87: // 'W'
       showDots = !showDots;
       break;
@@ -555,8 +561,6 @@ function toggleDots() {
 }
 
 function draw() {
-  
-
   translate(width / 2, height / 2);
   background(bgColor);
   strokeWeight(strokeW);
@@ -576,6 +580,7 @@ function draw() {
   }
 
   if (smoothingEnabled) {
+    mutation();
     // Blob smoothing with vibration using Perlin noise
     for (let i = 0; i < points.length; i++) {
       let prev = points[(i - 1 + points.length) % points.length];
@@ -590,12 +595,17 @@ function draw() {
       curr.y = smoothedY;
     }
   }
-  // Blob smoothing
+
+  // Blob outline smoothing
   beginShape();
   for (let i = 0; i < points.length; i++) {
-    vertex(points[i].x, points[i].y);
+    curveVertex(points[i].x, points[i].y);
   }
+  // Close the shape by connecting the last point to the first
+  curveVertex(points[0].x, points[0].y);
+  curveVertex(points[1].x, points[1].y);
   endShape(CLOSE);
+
 
   if (fillMode === "worm") {
     strokeWeight(2);
@@ -637,6 +647,8 @@ function draw() {
       }
     }
   }  // Brush
+  
+
  
   fill(255, 255, 255, 255);
   noStroke();
@@ -682,4 +694,33 @@ if (recordedFrames === numFrames) {
 }
 
 
+}
+function mutation() {
+  for (let i = 0; i < points.length; i++) {
+    points[i].x += velocities[i].vx;
+    points[i].y += velocities[i].vy;
+
+    // Check for collisions and change direction
+    for (let j = 0; j < points.length; j++) {
+      if (i != j) {
+        let dx = points[i].x - points[j].x;
+        let dy = points[i].y - points[j].y;
+        let distance = sqrt(dx * dx + dy * dy);
+        if (distance < 10) { // Adjust collision distance as needed
+          velocities[i].vx *= -1;
+          velocities[i].vy *= -1;
+          velocities[j].vx *= -1;
+          velocities[j].vy *= -1;
+        }
+      }
+    }
+
+    // Keep points within canvas bounds
+    if (points[i].x < -width/2 || points[i].x > width/2) {
+      velocities[i].vx *= -1;
+    }
+    if (points[i].y < -height/2 || points[i].y > height/2) {
+      velocities[i].vy *= -1;
+    }
+  }
 }
