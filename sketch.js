@@ -101,7 +101,7 @@ function setup() {
 function createUI() {
   
   
-  let label1 = createP ('UGLYPH<br>v0.7a 03/8/24');
+  let label1 = createP ('UGLYPH<br>v0.7a 3/8/24');
   label1.position(10, -5);
   label1.class('text');
   
