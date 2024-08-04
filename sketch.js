@@ -239,14 +239,14 @@ function createUI() {
   buttons.sGIF.mousePressed(recordGIF);
   NextButtonPosY += uiDist;
   
-  buttons.sMP4 = createButton(`
-    <span class="left-align">🖫</span>
-    <span class="center-align">Save&nbsp;MP4</span>
-    <span class="right-align">V</span>`);
-  buttons.sMP4.position(10,  NextButtonPosY);
-  buttons.sMP4.class('button');
-  buttons.sMP4.mousePressed(() => recording = true)
-  NextButtonPosY += uiDist;
+ // buttons.sMP4 = createButton(`
+ //   <span class="left-align">🖫</span>
+ //   <span class="center-align">Save&nbsp;MP4</span>
+ //   <span class="right-align">V</span>`);
+ // buttons.sMP4.position(10,  NextButtonPosY);
+ // buttons.sMP4.class('button');
+ // buttons.sMP4.mousePressed(() => recording = true)
+ // NextButtonPosY += uiDist;
   
   
   buttons.reload = createButton(`
@@ -342,9 +342,9 @@ function keyPressed() {
     case 83: // 'S'
       copyAndSaveSVG();
       break;
-      case 86: //'V'
-      recording = true;
-      break;
+   //   case 86: //'V'
+   //   recording = true;
+   //   break;
     case 87: // 'W'
       showDots = !showDots;
       break;
