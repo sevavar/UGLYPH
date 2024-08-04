@@ -37,7 +37,7 @@ let textOpacity = 255; // Text opacity
 let showUi = true; // Flag to show or hide the UI
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
-let NextButtonPosY = 280;
+let NextButtonPosY = 320;
 let uiDist = 45;
 let currentWidth, currentHeight;
 
@@ -149,6 +149,19 @@ function createUI() {
   sliders.amount.class('slider');
   sliders.amount.input(() => {
     amount = sliders.amount.value();
+    generateShape();
+  });
+  
+  
+    let label6 = createP ('Mutation Speed');
+  label6.position(10, 250);
+  label6.class('text');
+
+  sliders.mutationSpeed = createSlider(10, 20, mutationSpeed);
+  sliders.mutationSpeed.position(10, 280);
+  sliders.mutationSpeed.class('slider');
+  sliders.mutationSpeed.input(() => {
+    mutationSpeed = sliders.mutationSpeed.value();
     generateShape();
   });
   
