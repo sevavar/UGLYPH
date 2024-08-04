@@ -45,7 +45,6 @@ canvas {
       display: flex;
       justify-content: space-between;
       align-items: center;
-
       background-color: #444444;
       color: white;
       border: none;
@@ -56,6 +55,7 @@ canvas {
       margin: 4px 2px;
       cursor: pointer;
       border-radius: 30px;
+      white-space: nowrap;
 
       width: 210px; /* Adjust the width as needed */
     }
