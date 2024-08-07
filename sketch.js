@@ -1,7 +1,7 @@
 // Blob
 let points = []; // Array to store blob vertex points
-let amount = 2000; // Number of blob points
-let blobSize = 300; // Size of the blob
+let amount = 1000; // Number of blob points
+let blobSize = 600; // Size of the blob
 let showDots = true; // Variable to manage dot visibility
 
 // Blob Style
@@ -20,14 +20,15 @@ let currentMode = "repulse"; // Current mode for brush interaction ("attract" or
 let brushSize = 100; // Size of the brush
 let speed = 10; // Speed of brush interaction
 let smoothing = 1; // Smoothing factor for blob
-let explosionForce = 100;
+let explosionForce = 400;
 
 //Mutation
+let shouldMutate = true;
 let velocities = [];
 let mutationSpeed = 20;
-let noiseScale = 0.000001;
+let noiseScale = 10;
 let smoothingEnabled = true;
-let amplitude = 0.1;
+let amplitude = 1;
 let frequency = 0.001;
 
 // UI
@@ -37,7 +38,7 @@ let textOpacity = 255; // Text opacity
 let showUi = true; // Flag to show or hide the UI
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
-let NextButtonPosY = 320;
+let NextButtonPosY = 400;
 let uiDist = 45;
 let currentWidth, currentHeight;
 
@@ -62,25 +63,16 @@ function preload() {
         encoder.outputFilename = 'test';
 
         // Maximum width for downscaling
-        const maxWidth = 1080;
 
         // Get the dimensions of the canvas
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
 
-        // Calculate the new dimensions while maintaining aspect ratio
-        let newWidth = canvasWidth;
-        let newHeight = canvasHeight;
-
-        if (canvasWidth > maxWidth) {
-            newWidth = maxWidth;
-            newHeight = (canvasHeight / canvasWidth) * newWidth;
-        }
-
-        encoder.width = newWidth;
-        encoder.height = newHeight;
+      
+        encoder.width = canvasWidth;
+        encoder.height = canvasHeight;
         encoder.frameRate = frate;
-        encoder.kbps = 20000; // video quality
+        encoder.kbps = 40000; // video quality
         encoder.groupOfPictures = 5; // lower if you have fast actions.
         encoder.initialize();
     });
@@ -166,19 +158,42 @@ function createUI() {
   });
   
 
+ let label7 = createP ('Blob Size');
+  label7.position(10, 300);
+  label7.class('text');
+
+  sliders.blobSize = createSlider(300, canvas.width/2, blobSize);
+  sliders.blobSize.position(10, 330);
+  sliders.blobSize.class('slider');
+  sliders.blobSize.input(() => {
+    blobSize = sliders.blobSize.value();
+    generateShape();
+  });
+
+
+      buttons.stopMutation = createButton(`
+    <span class="left-align">☣</span>
+    <span class="center-align">Mutation</span>
+    <span class="right-align">M</span>`);
+  buttons.stopMutation.position(10,  NextButtonPosY);
+  buttons.stopMutation.class('button');
+  buttons.stopMutation.mousePressed(toggleMutation);
+  NextButtonPosY += uiDist;
+  
+  
   buttons.pause = createButton(
                                  `
-    <span class="left-align">⏯</span>
-    <span class="center-align">Pause/Play</span>
+    <span class="left-align">❄</span>
+    <span class="center-align">Freeze</span>
     <span class="right-align">M</span>
   `);
   buttons.pause.position(10,  NextButtonPosY);
   buttons.pause.class('button');
   buttons.pause.mousePressed(toggleSmoothing);
-  NextButtonPosY += uiDist+3;
+  NextButtonPosY += uiDist;
   
   buttons.changeMode = createButton(`
-    <span class="left-align">✎</span>
+    <span class="left-align">✧</span>
     <span class="center-align">Change&nbsp;Style</span>
     <span class="right-align">F</span>`);
   
@@ -188,8 +203,8 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.brushMode = createButton(`
-    <span class="left-align">±</span>
-    <span class="center-align">Push/Pull</span>
+    <span class="left-align">⦿</span>
+    <span class="center-align">Attract/Repulse</span>
     <span class="right-align">A</span>`);
   
   buttons.brushMode.position(10, NextButtonPosY);
@@ -198,7 +213,7 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.explode = createButton(`
-    <span class="left-align">✶</span>
+    <span class="left-align">☀</span>
     <span class="center-align">Explode</span>
     <span class="right-align">X</span>`);
   
@@ -208,7 +223,7 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.recolor = createButton(`
-    <span class="left-align">⛬</span>
+    <span class="left-align">☯</span>
     <span class="center-align">Recolor</span>
     <span class="right-align">R</span>`);
   
@@ -229,8 +244,8 @@ function createUI() {
   
   
   buttons.sPNG = createButton(`
-    <span class="left-align">⭳</span>
-    <span class="center-align">Save&nbsp;PNG</span>
+    <span class="left-align">🖪</span>
+    <span class="center-align">PNG</span>
     <span class="right-align">P</span>`);
   
   buttons.sPNG.position(10,  NextButtonPosY);
@@ -239,8 +254,8 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.sSVG = createButton(`
-    <span class="left-align">⭳</span>
-    <span class="center-align">Save&nbsp;SVG</span>
+    <span class="left-align">🖪</span>
+    <span class="center-align">SVG</span>
     <span class="right-align">S</span>`);
   buttons.sSVG.position(10,  NextButtonPosY);
   buttons.sSVG.class('button');
@@ -248,8 +263,8 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.sGIF = createButton(`
-    <span class="left-align">⭳</span>
-    <span class="center-align">Save&nbsp;GIF</span>
+    <span class="left-align">🖪</span>
+    <span class="center-align">GIF</span>
     <span class="right-align">G</span>`);
   buttons.sGIF.position(10,  NextButtonPosY);
   buttons.sGIF.class('button');
@@ -257,8 +272,8 @@ function createUI() {
   NextButtonPosY += uiDist;
   
   buttons.sMP4 = createButton(`
-    <span class="left-align">⭳</span>
-    <span class="center-align">Save&nbsp;MP4</span>
+    <span class="left-align">🖪</span>
+    <span class="center-align">MP4</span>
     <span class="right-align">V</span>`);
   buttons.sMP4.position(10,  NextButtonPosY);
   buttons.sMP4.class('button');
@@ -274,6 +289,8 @@ function createUI() {
   buttons.reload.class('button');
   buttons.reload.mousePressed(reloadWindow);
   NextButtonPosY += uiDist;
+  
+
 
 }
 
@@ -352,7 +369,8 @@ function keyPressed() {
     case 73: // 'I'
       invertColors(); break;
     case 77: // 'M'
-      toggleSmoothing();
+      shouldMutate = false
+      //toggleSmoothing();
       break;
     case 88: // 'X'
       explode(); break;
@@ -517,41 +535,18 @@ function recordVideo() {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
 
-    // Maximum width for downscaling
-    const maxWidth = 1080;
-
-    // Calculate the new dimensions while maintaining aspect ratio
-    let newWidth = canvasWidth;
-    let newHeight = canvasHeight;
-
-    if (canvasWidth > maxWidth) {
-        newWidth = maxWidth;
-        newHeight = (canvasHeight / canvasWidth) * newWidth;
-    }
-
-    // Create a temporary canvas for resizing
-    const tempCanvas = document.createElement('canvas');
-    const tempContext = tempCanvas.getContext('2d');
-    tempCanvas.width = newWidth;
-    tempCanvas.height = newHeight;
-
     // Save the current transformation state
     drawingContext.save();
 
-    // Clear the temporary canvas
-    tempContext.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-    // Draw the current canvas onto the temporary canvas with scaling
-    tempContext.drawImage(canvas, 0, 0, canvasWidth, canvasHeight, 0, 0, newWidth, newHeight);
-
-    // Capture the resized image data from the temporary canvas
-    let imageData = tempContext.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    // Capture the image data from the canvas directly
+    let imageData = drawingContext.getImageData(0, 0, canvasWidth, canvasHeight);
     encoder.addFrameRgba(imageData.data);
 
     // Restore the previous transformation state
     drawingContext.restore();
 
     recordedFrames++;
+
 }
 function saveBlob(blob, fileName) {
   let link = document.createElement('a');
@@ -709,6 +704,8 @@ if (recordedFrames === numFrames) {
 
 }
 function mutation() {
+  if (!shouldMutate) return; // Skip mutation logic if toggled off
+
   for (let i = 0; i < points.length; i++) {
     points[i].x += velocities[i].vx;
     points[i].y += velocities[i].vy;
@@ -736,4 +733,7 @@ function mutation() {
       velocities[i].vy *= -1;
     }
   }
+}
+function toggleMutation() {
+  shouldMutate = !shouldMutate; // Toggle the boolean flag
 }
