@@ -39,7 +39,9 @@ let showUi = true; // Flag to show or hide the UI
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
 let sliderPos = 30;
-let buttonPos = 350;
+let sliderDist = 45;
+let sliderLabelDist = 20;
+let buttonPos = 320;
 let uiDist = 40;
 let currentWidth, currentHeight;
 
@@ -110,10 +112,10 @@ function createUI() {
   label2.class('text');
 
   sliders.brushSize = createSlider(10, 200, brushSize);
-  sliders.brushSize.position(10, sliderPos + 25);
+  sliders.brushSize.position(10, sliderPos + sliderLabelDist);
   sliders.brushSize.class('slider');
   sliders.brushSize.input(() => brushSize = sliders.brushSize.value());
-  sliderPos += 50;
+  sliderPos += uiDist;
   
   
   let label5 = createP ('Force');
@@ -121,34 +123,34 @@ function createUI() {
   label5.class('text');
 
   sliders.speed = createSlider(20, 200, speed);
-  sliders.speed.position(10, sliderPos + 25);
+  sliders.speed.position(10, sliderPos + sliderLabelDist);
   sliders.speed.class('slider');
   sliders.speed.input(() => speed = sliders.speed.value());
-  sliderPos += 50;
+  sliderPos += uiDist;
   
   let label3 = createP ('Outline');
   label3.position(10, sliderPos);
   label3.class('text');
 
   sliders.strokeW = createSlider(1, 200, strokeW);
-  sliders.strokeW.position(10, sliderPos + 25);
+  sliders.strokeW.position(10, sliderPos + sliderLabelDist);
   sliders.strokeW.class('slider');
   sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
-  sliderPos += 50;
+  sliderPos += sliderDist;
   
   let label4 = createP ('Complexity');
   label4.position(10, sliderPos);
   label4.class('text');
 
   sliders.amount = createSlider(100, 1000, amount);
-  sliders.amount.position(10, sliderPos + 25);
+  sliders.amount.position(10, sliderPos + sliderLabelDist);
   sliders.amount.class('slider');
   sliders.amount.input(() => { amount = sliders.amount.value();
                          
   generateShape();
                          
   });
-  sliderPos += 50;
+  sliderPos += sliderDist;
   
   
   let label6 = createP ('Mutation Speed');
@@ -156,13 +158,13 @@ function createUI() {
   label6.class('text');
 
   sliders.mutationSpeed = createSlider(10, 20, mutationSpeed);
-  sliders.mutationSpeed.position(10, sliderPos + 25);
+  sliders.mutationSpeed.position(10, sliderPos + sliderLabelDist);
   sliders.mutationSpeed.class('slider');
   sliders.mutationSpeed.input(() => {
     mutationSpeed = sliders.mutationSpeed.value();
     generateShape();
   });
-  sliderPos += 50;
+  sliderPos += sliderDist;
   
   
 
@@ -171,17 +173,17 @@ function createUI() {
   label7.class('text');
 
   sliders.blobSize = createSlider(300, canvas.width/2, blobSize);
-  sliders.blobSize.position(10, sliderPos + 25);
+  sliders.blobSize.position(10, sliderPos + sliderLabelDist);
   sliders.blobSize.class('slider');
   sliders.blobSize.input(() => {
     blobSize = sliders.blobSize.value();
     generateShape();
   });
-  sliderPos += 50;
+  sliderPos += sliderDist;
   
   
     buttons.restart = createButton(`
-    <span class="left-align">⭯</span>
+    <span class="left-align">•</span>
     <span class="center-align">Restart</span>
     <span class="right-align">Esc</span>`);
   buttons.restart.position(10,  buttonPos);
@@ -221,7 +223,7 @@ function createUI() {
   buttonPos += uiDist;
   
   buttons.brushMode = createButton(`
-    <span class="left-align">⦿</span>
+    <span class="left-align">•</span>
     <span class="center-align">Attract/Repulse</span>
     <span class="right-align">A</span>`);
   
@@ -241,7 +243,7 @@ function createUI() {
   buttonPos += uiDist;
   
   buttons.recolor = createButton(`
-    <span class="left-align">⋱</span>
+    <span class="left-align">•</span>
     <span class="center-align">Recolor</span>
     <span class="right-align">R</span>`);
   
@@ -262,7 +264,7 @@ function createUI() {
   
   
   buttons.sPNG = createButton(`
-    <span class="left-align">🖪</span>
+    <span class="left-align">↓</span>
     <span class="center-align">PNG</span>
     <span class="right-align">P</span>`);
   
@@ -272,7 +274,7 @@ function createUI() {
   buttonPos += uiDist;
   
   buttons.sSVG = createButton(`
-    <span class="left-align">🖪</span>
+    <span class="left-align">↓</span>
     <span class="center-align">SVG</span>
     <span class="right-align">S</span>`);
   buttons.sSVG.position(10,  buttonPos);
@@ -281,7 +283,7 @@ function createUI() {
   buttonPos += uiDist;
   
   buttons.sGIF = createButton(`
-    <span class="left-align">🖪</span>
+    <span class="left-align">↓</span>
     <span class="center-align">GIF</span>
     <span class="right-align">G</span>`);
   buttons.sGIF.position(10,  buttonPos);
@@ -290,7 +292,7 @@ function createUI() {
   buttonPos += uiDist;
   
   buttons.sMP4 = createButton(`
-    <span class="left-align">🖪</span>
+    <span class="left-align">↓</span>
     <span class="center-align">MP4</span>
     <span class="right-align">V</span>`);
   buttons.sMP4.position(10,  buttonPos);
@@ -748,6 +750,9 @@ function mutation() {
       velocities[i].vy *= -1;
     }
   }
+}
+function toggleMutation() {
+  shouldMutate = !shouldMutate; // Toggle the boolean flag
 }
 function toggleMutation() {
   shouldMutate = !shouldMutate; // Toggle the boolean flag
