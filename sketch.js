@@ -18,14 +18,14 @@ let edgeColor = 'black';
 // Modifier
 let currentMode = "repulse"; // Current mode for brush interaction ("attract" or "repulse")
 let brushSize = 100; // Size of the brush
-let speed = 10; // Speed of brush interaction
+let speed = 20; // Speed of brush interaction
 let smoothing = 1; // Smoothing factor for blob
-let explosionForce = 400;
+let explosionForce = 800;
 
 //Mutation
 let shouldMutate = true;
 let velocities = [];
-let mutationSpeed = 20;
+let mutationSpeed = 10;
 let noiseScale = 10;
 let smoothingEnabled = true;
 let amplitude = 1;
@@ -38,10 +38,10 @@ let textOpacity = 255; // Text opacity
 let showUi = true; // Flag to show or hide the UI
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
-let NextButtonPosY = 400;
-let uiDist = 45;
+let sliderPos = 30;
+let buttonPos = 350;
+let uiDist = 40;
 let currentWidth, currentHeight;
-
 
 
 // Video
@@ -78,12 +78,14 @@ function preload() {
     });
 }
 function setup() {
+  
+  
   frameRate(60);
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
   strokeW = random (1,180)
-  amount = random (100,2000)
+  amount = random (100,1000)
   noCursor();
   generateShape();
   fillMode = "filled"; // Default fill mode
@@ -96,151 +98,167 @@ function setup() {
 }
 function createUI() {
   
-  
-  let label1 = createP ('UGLYPH<br>v0.7a 03/8/24');
+  let label1 = createP ('UGLYPH v0.7a');
   label1.position(10, -5);
   label1.class('text');
   
   let label2 = createP (`
-    <span class="left-align">Cursor&nbsp;Radius</span>
+    <span class="left-align">Radius</span>
     <span class="right-align"></span>
   `);
-  label2.position(10, 50);
+  label2.position(10, sliderPos);
   label2.class('text');
 
   sliders.brushSize = createSlider(10, 200, brushSize);
-  sliders.brushSize.position(10, 80);
+  sliders.brushSize.position(10, sliderPos + 25);
   sliders.brushSize.class('slider');
   sliders.brushSize.input(() => brushSize = sliders.brushSize.value());
+  sliderPos += 50;
   
   
-  let label5 = createP ('Cursor Strength');
-  label5.position(10, 100);
+  let label5 = createP ('Force');
+  label5.position(10, sliderPos);
   label5.class('text');
 
-  sliders.speed = createSlider(5, 30, speed);
-  sliders.speed.position(10, 130);
+  sliders.speed = createSlider(20, 200, speed);
+  sliders.speed.position(10, sliderPos + 25);
   sliders.speed.class('slider');
   sliders.speed.input(() => speed = sliders.speed.value());
+  sliderPos += 50;
   
-  let label3 = createP ('Shape Thickness');
-  label3.position(10, 150);
+  let label3 = createP ('Outline');
+  label3.position(10, sliderPos);
   label3.class('text');
 
   sliders.strokeW = createSlider(1, 200, strokeW);
-  sliders.strokeW.position(10, 180);
+  sliders.strokeW.position(10, sliderPos + 25);
   sliders.strokeW.class('slider');
   sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
+  sliderPos += 50;
   
-  let label4 = createP ('Shape Complexity');
-  label4.position(10, 200);
+  let label4 = createP ('Complexity');
+  label4.position(10, sliderPos);
   label4.class('text');
 
-  sliders.amount = createSlider(100, 2000, amount);
-  sliders.amount.position(10, 230);
+  sliders.amount = createSlider(100, 1000, amount);
+  sliders.amount.position(10, sliderPos + 25);
   sliders.amount.class('slider');
-  sliders.amount.input(() => {
-    amount = sliders.amount.value();
-    generateShape();
+  sliders.amount.input(() => { amount = sliders.amount.value();
+                         
+  generateShape();
+                         
   });
+  sliderPos += 50;
   
   
-    let label6 = createP ('Mutation Speed');
-  label6.position(10, 250);
+  let label6 = createP ('Mutation Speed');
+  label6.position(10, sliderPos);
   label6.class('text');
 
   sliders.mutationSpeed = createSlider(10, 20, mutationSpeed);
-  sliders.mutationSpeed.position(10, 280);
+  sliders.mutationSpeed.position(10, sliderPos + 25);
   sliders.mutationSpeed.class('slider');
   sliders.mutationSpeed.input(() => {
     mutationSpeed = sliders.mutationSpeed.value();
     generateShape();
   });
+  sliderPos += 50;
+  
   
 
- let label7 = createP ('Blob Size');
-  label7.position(10, 300);
+ let label7 = createP ('Size');
+  label7.position(10, sliderPos);
   label7.class('text');
 
   sliders.blobSize = createSlider(300, canvas.width/2, blobSize);
-  sliders.blobSize.position(10, 330);
+  sliders.blobSize.position(10, sliderPos + 25);
   sliders.blobSize.class('slider');
   sliders.blobSize.input(() => {
     blobSize = sliders.blobSize.value();
     generateShape();
   });
-
-
-      buttons.stopMutation = createButton(`
-    <span class="left-align">☣</span>
-    <span class="center-align">Mutation</span>
-    <span class="right-align">M</span>`);
-  buttons.stopMutation.position(10,  NextButtonPosY);
-  buttons.stopMutation.class('button');
-  buttons.stopMutation.mousePressed(toggleMutation);
-  NextButtonPosY += uiDist;
+  sliderPos += 50;
+  
+  
+    buttons.restart = createButton(`
+    <span class="left-align">⭯</span>
+    <span class="center-align">Restart</span>
+    <span class="right-align">Esc</span>`);
+  buttons.restart.position(10,  buttonPos);
+  buttons.restart.class('button');
+  buttons.restart.mousePressed(reloadWindow);
+  buttonPos += uiDist;
   
   
   buttons.pause = createButton(
                                  `
     <span class="left-align">❄</span>
     <span class="center-align">Freeze</span>
-    <span class="right-align">M</span>
+    <span class="right-align">Space</span>
   `);
-  buttons.pause.position(10,  NextButtonPosY);
+  buttons.pause.position(10,  buttonPos);
   buttons.pause.class('button');
   buttons.pause.mousePressed(toggleSmoothing);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
+
+  buttons.mutation = createButton(`
+    <span class="left-align">☢</span>
+    <span class="center-align">Mutation</span>
+    <span class="right-align">M</span>`);
+  buttons.mutation.position(10,buttonPos);
+  buttons.mutation.class('button');
+  buttons.mutation.mousePressed(toggleMutation);
+  buttonPos += uiDist;
   
   buttons.changeMode = createButton(`
     <span class="left-align">✧</span>
     <span class="center-align">Change&nbsp;Style</span>
     <span class="right-align">F</span>`);
   
-  buttons.changeMode.position(10, NextButtonPosY);
+  buttons.changeMode.position(10, buttonPos);
   buttons.changeMode.class('button');
   buttons.changeMode.mousePressed(toggleFillMode);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.brushMode = createButton(`
     <span class="left-align">⦿</span>
     <span class="center-align">Attract/Repulse</span>
     <span class="right-align">A</span>`);
   
-  buttons.brushMode.position(10, NextButtonPosY);
+  buttons.brushMode.position(10, buttonPos);
   buttons.brushMode.class('button');
   buttons.brushMode.mousePressed(toggleAttractionRepulsion);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.explode = createButton(`
-    <span class="left-align">☀</span>
+    <span class="left-align">✱</span>
     <span class="center-align">Explode</span>
     <span class="right-align">X</span>`);
   
-  buttons.explode.position(10, NextButtonPosY);
+  buttons.explode.position(10, buttonPos);
   buttons.explode.class('button');
   buttons.explode.mousePressed(explode);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.recolor = createButton(`
-    <span class="left-align">☯</span>
+    <span class="left-align">⋱</span>
     <span class="center-align">Recolor</span>
     <span class="right-align">R</span>`);
   
-  buttons.recolor.position(10, NextButtonPosY);
+  buttons.recolor.position(10, buttonPos);
   buttons.recolor.class('button');
   buttons.recolor.mousePressed(recolor);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
 
   buttons.invertColors = createButton(`
-    <span class="left-align">◐</span>
+    <span class="left-align">☯</span>
     <span class="center-align">Black&nbsp;&&nbsp;White</span>
     <span class="right-align">I</span>`);
   
-  buttons.invertColors.position(10, NextButtonPosY);
+  buttons.invertColors.position(10, buttonPos);
   buttons.invertColors.class('button');
   buttons.invertColors.mousePressed(invertColors);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   
   buttons.sPNG = createButton(`
@@ -248,47 +266,40 @@ function createUI() {
     <span class="center-align">PNG</span>
     <span class="right-align">P</span>`);
   
-  buttons.sPNG.position(10,  NextButtonPosY);
+  buttons.sPNG.position(10,  buttonPos);
   buttons.sPNG.class('button');
   buttons.sPNG.mousePressed(savePNG);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.sSVG = createButton(`
     <span class="left-align">🖪</span>
     <span class="center-align">SVG</span>
     <span class="right-align">S</span>`);
-  buttons.sSVG.position(10,  NextButtonPosY);
+  buttons.sSVG.position(10,  buttonPos);
   buttons.sSVG.class('button');
   buttons.sSVG.mousePressed(copyAndSaveSVG);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.sGIF = createButton(`
     <span class="left-align">🖪</span>
     <span class="center-align">GIF</span>
     <span class="right-align">G</span>`);
-  buttons.sGIF.position(10,  NextButtonPosY);
+  buttons.sGIF.position(10,  buttonPos);
   buttons.sGIF.class('button');
   buttons.sGIF.mousePressed(recordGIF);
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   buttons.sMP4 = createButton(`
     <span class="left-align">🖪</span>
     <span class="center-align">MP4</span>
     <span class="right-align">V</span>`);
-  buttons.sMP4.position(10,  NextButtonPosY);
+  buttons.sMP4.position(10,  buttonPos);
   buttons.sMP4.class('button');
   buttons.sMP4.mousePressed(() => recording = true)
-  NextButtonPosY += uiDist;
+  buttonPos += uiDist;
   
   
-  buttons.reload = createButton(`
-    <span class="left-align">⭯</span>
-    <span class="center-align">Reload</span>
-    <span class="right-align">Esc</span>`);
-  buttons.reload.position(10,  NextButtonPosY);
-  buttons.reload.class('button');
-  buttons.reload.mousePressed(reloadWindow);
-  NextButtonPosY += uiDist;
+
   
 
 
@@ -390,6 +401,9 @@ function keyPressed() {
       break;
     case 27: // 'Esc'
       reloadWindow();
+      break;
+      case 32: // 'Space'
+      toggleSmoothing();
       break;
   }
 }
@@ -569,6 +583,7 @@ function toggleDots() {
 }
 
 function draw() {
+  
   translate(width / 2, height / 2);
   background(bgColor);
   strokeWeight(strokeW);
