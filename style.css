@@ -15,15 +15,12 @@ canvas {
   align-items: center;
   color: #ffffff;
   font-family: monospace, monospace;
-  width: 210px;
 }
 
- /* Dark theme styles for text */
 .dark-theme .text {
   color: #ffffff;
 }
 
-/* Light theme styles for text */
 .light-theme .text {
   color: #000000;
 } 
@@ -47,7 +44,7 @@ canvas {
       cursor: pointer;
       border-radius: 30px;
       white-space: nowrap;
-      width: 210px; /* Adjust the width as needed */
+      width: 200px; /* Adjust the width as needed */
     }
     .left-align {
       flex: 1;
@@ -66,12 +63,31 @@ canvas {
       background-color: #BABABA;
     }
 
+.smallbutton {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #444444;
+      color: white;
+      border: none;
+      padding: 10px 10px;
+      text-align: center;
+      text-decoration: none;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 30px;
+      white-space: nowrap;
+      width: 50px; /* Adjust the width as needed */
+}
 
+.smallbutton:hover {
+      background-color: #BABABA;
+    }
 
 input[type=range] {
   -webkit-appearance: none;
   margin: 10px 0;
-  width: 210px;
+  width: 200px;
   background-color: transparent;
 }
 input[type=range]:focus {
