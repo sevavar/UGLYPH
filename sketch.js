@@ -17,15 +17,15 @@ let edgeColor = 'black';
 
 // Modifier
 let currentMode = "repulse"; // Current mode for brush interaction ("attract" or "repulse")
-let brushSize = 100; // Size of the brush
-let speed = 20; // Speed of brush interaction
+let touchRadius = 100; // Size of the tool
+let touchForce = 20; // Force of interaction
 let smoothing = 1; // Smoothing factor for blob
 let explosionForce = 800;
 
 //Mutation
 let shouldMutate = true;
 let velocities = [];
-let mutationSpeed = 10;
+let mutationSpeed = 15;
 let noiseScale = 10;
 let smoothingEnabled = true;
 let amplitude = 1;
@@ -62,7 +62,7 @@ let frameCounter = 0;
 function preload() {
     HME.createH264MP4Encoder().then(enc => {
         encoder = enc;
-        encoder.outputFilename = 'test';
+        encoder.outputFilename = 'uglyph';
 
         // Maximum width for downscaling
 
@@ -74,28 +74,24 @@ function preload() {
         encoder.width = canvasWidth;
         encoder.height = canvasHeight;
         encoder.frameRate = frate;
-        encoder.kbps = 40000; // video quality
+        encoder.kbps = 80000; // video quality
         encoder.groupOfPictures = 5; // lower if you have fast actions.
         encoder.initialize();
     });
 }
 function setup() {
   
-  
-  frameRate(60);
+  frameRate(25);
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
   strokeW = random (1,180)
   amount = random (100,1000)
-  noCursor();
-  generateShape();
   fillMode = "filled"; // Default fill mode
-  // Blob vertex array generation
-
   recolor();
   createUI();
-  
+  noCursor();
+  generateShape();
   
 }
 function createUI() {
@@ -111,10 +107,10 @@ function createUI() {
   label2.position(10, sliderPos);
   label2.class('text');
 
-  sliders.brushSize = createSlider(10, 200, brushSize);
-  sliders.brushSize.position(10, sliderPos + sliderLabelDist);
-  sliders.brushSize.class('slider');
-  sliders.brushSize.input(() => brushSize = sliders.brushSize.value());
+  sliders.touchRadius = createSlider(10, 200, touchRadius);
+  sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
+  sliders.touchRadius.class('slider');
+  sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
   sliderPos += uiDist;
   
   
@@ -122,10 +118,10 @@ function createUI() {
   label5.position(10, sliderPos);
   label5.class('text');
 
-  sliders.speed = createSlider(20, 200, speed);
-  sliders.speed.position(10, sliderPos + sliderLabelDist);
-  sliders.speed.class('slider');
-  sliders.speed.input(() => speed = sliders.speed.value());
+  sliders.force = createSlider(20, 200, touchForce);
+  sliders.force.position(10, sliderPos + sliderLabelDist);
+  sliders.force.class('slider');
+  sliders.force.input(() => touchForce = sliders.force.value());
   sliderPos += uiDist;
   
   let label3 = createP ('Outline');
@@ -264,41 +260,33 @@ function createUI() {
   
   
   buttons.sPNG = createButton(`
-    <span class="left-align">↓</span>
     <span class="center-align">PNG</span>
-    <span class="right-align">P</span>`);
+    `);
   
   buttons.sPNG.position(10,  buttonPos);
-  buttons.sPNG.class('button');
+  buttons.sPNG.class('smallbutton');
   buttons.sPNG.mousePressed(savePNG);
-  buttonPos += uiDist;
   
   buttons.sSVG = createButton(`
-    <span class="left-align">↓</span>
-    <span class="center-align">SVG</span>
-    <span class="right-align">S</span>`);
-  buttons.sSVG.position(10,  buttonPos);
-  buttons.sSVG.class('button');
+  <span class="center-align">SVG</span>
+  `);
+  buttons.sSVG.position(60,  buttonPos);
+  buttons.sSVG.class('smallbutton');
   buttons.sSVG.mousePressed(copyAndSaveSVG);
-  buttonPos += uiDist;
   
   buttons.sGIF = createButton(`
-    <span class="left-align">↓</span>
     <span class="center-align">GIF</span>
-    <span class="right-align">G</span>`);
-  buttons.sGIF.position(10,  buttonPos);
-  buttons.sGIF.class('button');
+  `);
+  buttons.sGIF.position(110,  buttonPos);
+  buttons.sGIF.class('smallbutton');
   buttons.sGIF.mousePressed(recordGIF);
-  buttonPos += uiDist;
   
   buttons.sMP4 = createButton(`
-    <span class="left-align">↓</span>
-    <span class="center-align">MP4</span>
-    <span class="right-align">V</span>`);
-  buttons.sMP4.position(10,  buttonPos);
-  buttons.sMP4.class('button');
+  <span class="center-align">MP4</span>
+`);
+  buttons.sMP4.position(160,  buttonPos);
+  buttons.sMP4.class('smallbutton');
   buttons.sMP4.mousePressed(() => recording = true)
-  buttonPos += uiDist;
   
   
 
@@ -321,13 +309,13 @@ function generateShape() {
     velocities.push({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) });
   }
 }
-function setBrushSpeed(speedValue) {
-  speed = speedValue;
+function setTouchForce(speedValue) {
+  touchForce = speedValue;
 }
-function adjustBrushSize(amount) {
-  brushSize += amount;
-  if (brushSize <= 1) {
-    brushSize = 10;
+function adjustTouchRadius(amount) {
+  touchRadius += amount;
+  if (touchRadius <= 1) {
+    touchRadius = 10;
   }
 }
 function adjustStrokeWidth(amount) {
@@ -352,13 +340,13 @@ function keyPressed() {
     case 51: // '3'
     case 52: // '4'
     case 53: // '5'
-      setBrushSpeed((keyCode - 48) / 10);
+      adjustTouchForce((keyCode - 48) / 10);
       break;
     case 221: // ']'
-      adjustBrushSize(10);
+      adjustTouchRadius(10);
       break;
     case 219: // '['
-      if (brushSize > 10) adjustBrushSize(-10);
+      if (touchRadius > 10) adjustTouchRadius(-10);
       break;
     case 189: // '-'
       if (strokeW > 2.5) adjustStrokeWidth(-2.5);
@@ -431,8 +419,8 @@ function explode() {
   for (let i = 0; i < points.length; i++) {
     points[i].x += random(-explosionForce, explosionForce);
     points[i].y += random(-explosionForce, explosionForce);
-    //  points[i].x += (centerX - points[i].x) * 0.1 * speed;
-    //  points[i].y += (centerY - points[i].y) * 0.1 * speed;
+    //  points[i].x += (centerX - points[i].x) * 0.1 * touchForce;
+    //  points[i].y += (centerY - points[i].y) * 0.1 * touchForce;
   }
 }
 function recolor() {
@@ -666,9 +654,9 @@ function draw() {
       let d = dist(mouseX - width / 2, mouseY - height / 2, points[i].x, points[i].y);
       let direction = currentMode === "attract" ? 1 : -1;
 
-      if (d < brushSize) {
-        points[i].x += (mouseX - width / 2 - points[i].x) * 0.01*speed * direction;
-        points[i].y += (mouseY - height / 2 - points[i].y) * 0.01*speed * direction;
+      if (d < touchRadius) {
+        points[i].x += (mouseX - width / 2 - points[i].x) * 0.01*touchForce * direction;
+        points[i].y += (mouseY - height / 2 - points[i].y) * 0.01*touchForce * direction;
       }
     }
   }  // Brush
@@ -679,12 +667,12 @@ function draw() {
   noStroke();
   circle(mouseX - width / 2, mouseY - height / 2, 5); // Inner dot
   fill(100, 100, 100, 75);
-  circle(mouseX - width / 2, mouseY - height / 2, brushSize * 2); // Outer cursor
+  circle(mouseX - width / 2, mouseY - height / 2,touchRadius * 2); // Outer cursor
 
 
   if (mouseIsPressed === true) {
     fill(guiTextColor);
-    circle(mouseX - width / 2, mouseY - height / 2, brushSize / 1.6); // Active cursor
+    circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6); // Active cursor
   }
   if (bgColor === 'white') {
     document.body.classList.add('light-theme');
@@ -750,9 +738,6 @@ function mutation() {
       velocities[i].vy *= -1;
     }
   }
-}
-function toggleMutation() {
-  shouldMutate = !shouldMutate; // Toggle the boolean flag
 }
 function toggleMutation() {
   shouldMutate = !shouldMutate; // Toggle the boolean flag
