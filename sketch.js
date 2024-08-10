@@ -85,9 +85,9 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
-  strokeW = random (1,180)
+  strokeW = random (1,60)
   amount = random (100,1000)
-  fillMode = "filled"; // Default fill mode
+  fillMode = "outline"; // Default fill mode
   recolor();
   createUI();
   noCursor();
@@ -100,10 +100,7 @@ function createUI() {
   label1.position(10, -5);
   label1.class('text');
   
-  let label2 = createP (`
-    <span class="left-align">Radius</span>
-    <span class="right-align"></span>
-  `);
+  let label2 = createP ('Interaction Radius');
   label2.position(10, sliderPos);
   label2.class('text');
 
@@ -111,10 +108,10 @@ function createUI() {
   sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
   sliders.touchRadius.class('slider');
   sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
-  sliderPos += uiDist;
+  sliderPos += sliderDist;
   
   
-  let label5 = createP ('Force');
+  let label5 = createP ('Interaction Force');
   label5.position(10, sliderPos);
   label5.class('text');
 
@@ -122,7 +119,7 @@ function createUI() {
   sliders.force.position(10, sliderPos + sliderLabelDist);
   sliders.force.class('slider');
   sliders.force.input(() => touchForce = sliders.force.value());
-  sliderPos += uiDist;
+  sliderPos += sliderDist;
   
   let label3 = createP ('Outline');
   label3.position(10, sliderPos);
@@ -179,7 +176,7 @@ function createUI() {
   
   
     buttons.restart = createButton(`
-    <span class="left-align">•</span>
+    <span class="left-align">↻</span>
     <span class="center-align">Restart</span>
     <span class="right-align">Esc</span>`);
   buttons.restart.position(10,  buttonPos);
@@ -200,7 +197,7 @@ function createUI() {
   buttonPos += uiDist;
 
   buttons.mutation = createButton(`
-    <span class="left-align">☢</span>
+    <span class="left-align">☣</span>
     <span class="center-align">Mutation</span>
     <span class="right-align">M</span>`);
   buttons.mutation.position(10,buttonPos);
@@ -208,18 +205,8 @@ function createUI() {
   buttons.mutation.mousePressed(toggleMutation);
   buttonPos += uiDist;
   
-  buttons.changeMode = createButton(`
-    <span class="left-align">✧</span>
-    <span class="center-align">Change&nbsp;Style</span>
-    <span class="right-align">F</span>`);
-  
-  buttons.changeMode.position(10, buttonPos);
-  buttons.changeMode.class('button');
-  buttons.changeMode.mousePressed(toggleFillMode);
-  buttonPos += uiDist;
-  
   buttons.brushMode = createButton(`
-    <span class="left-align">•</span>
+    <span class="left-align">±</span>
     <span class="center-align">Attract/Repulse</span>
     <span class="right-align">A</span>`);
   
@@ -238,8 +225,18 @@ function createUI() {
   buttons.explode.mousePressed(explode);
   buttonPos += uiDist;
   
+    buttons.changeMode = createButton(`
+    <span class="left-align">✧</span>
+    <span class="center-align">Change&nbsp;Style</span>
+    <span class="right-align">F</span>`);
+  
+  buttons.changeMode.position(10, buttonPos);
+  buttons.changeMode.class('button');
+  buttons.changeMode.mousePressed(toggleFillMode);
+  buttonPos += uiDist;
+  
   buttons.recolor = createButton(`
-    <span class="left-align">•</span>
+    <span class="left-align">⸭</span>
     <span class="center-align">Recolor</span>
     <span class="right-align">R</span>`);
   
@@ -532,7 +529,7 @@ function copyAndSaveSVG() {
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
 function recordGIF() {
-  saveGif('uglyph.gif', 2,{ notificationDuration: 1 });
+  saveGif('uglyph.gif', 10,{ notificationDuration: 1 });
 }
 function recordVideo() {
     // Get the dimensions of the canvas
