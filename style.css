@@ -17,10 +17,12 @@ canvas {
   font-family: monospace, monospace;
 }
 
+ /* Dark theme styles for text */
 .dark-theme .text {
   color: #ffffff;
 }
 
+/* Light theme styles for text */
 .light-theme .text {
   color: #000000;
 } 
@@ -29,6 +31,7 @@ canvas {
       display: block;
       margin: 10px 0;
     font-family: monospace, monospace;
+  font-size: 12px;
     }
    .button {
       display: flex;
@@ -38,6 +41,7 @@ canvas {
       color: white;
       border: none;
       padding: 10px 10px;
+      
       text-align: center;
       text-decoration: none;
       margin: 4px 2px;
@@ -71,6 +75,7 @@ canvas {
       color: white;
       border: none;
       padding: 10px 10px;
+      font-size: 12px;
       text-align: center;
       text-decoration: none;
       margin: 4px 2px;
