@@ -2,7 +2,7 @@
 let points = []; // Array to store blob vertex points
 let amount = 1000; // Number of blob points
 let blobSize = 600; // Size of the blob
-let showDots = true; // Variable to manage dot visibility
+let showDots = false; // Variable to manage dot visibility
 
 // Blob Style
 let dotSize = 1;
@@ -16,7 +16,7 @@ let cursorColor = 'red';
 let edgeColor = 'black';
 
 // Modifier
-let currentMode = "repulse"; // Current mode for brush interaction ("attract" or "repulse")
+let currentMode = "attract"; // Current mode for brush interaction ("attract" or "repulse")
 let touchRadius = 100; // Size of the tool
 let touchForce = 20; // Force of interaction
 let smoothing = 1; // Smoothing factor for blob
@@ -25,13 +25,14 @@ let explosionForce = 800;
 //Mutation
 let shouldMutate = true;
 let velocities = [];
-let mutationSpeed = 15;
-let noiseScale = 10;
+let mutationSpeed = 50;
+let noiseScale = 1;
 let smoothingEnabled = true;
 let amplitude = 1;
 let frequency = 0.001;
 
 // UI
+let showUI = true;
 let sliders = {};
 let buttons = {};
 let textOpacity = 255; // Text opacity
@@ -52,7 +53,7 @@ let currentWidth, currentHeight;
 let button;
 let encoder;
 const frate = 25 // frame rate;
-const numFrames = 250 // num of frames to record;
+const numFrames = 500 // num of frames to record;
 let recording = false;
 let recordedFrames = 0;
 let count = 0;
@@ -75,7 +76,7 @@ function preload() {
         encoder.height = canvasHeight;
         encoder.frameRate = frate;
         encoder.kbps = 80000; // video quality
-        encoder.groupOfPictures = 5; // lower if you have fast actions.
+        encoder.groupOfPictures = 10; // lower if you have fast actions.
         encoder.initialize();
     });
 }
@@ -85,18 +86,22 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
-  strokeW = random (1,60)
-  amount = random (100,1000)
+  //strokeW = random (1,60);
+  strokeW = 3;
+ // amount = random (100,1000)
+  amount = 1000;
   fillMode = "outline"; // Default fill mode
   recolor();
+  showUI = true;
   createUI();
-  noCursor();
+  //noCursor();
   generateShape();
   
 }
 function createUI() {
-  
-  let label1 = createP ('UGLYPH v0.7a');
+    if (showUI == true) {
+    
+  let label1 = createP ('UGLYPH v0.71a');
   label1.position(10, -5);
   label1.class('text');
   
@@ -292,6 +297,8 @@ function createUI() {
 
 }
 
+}
+
 function generateShape() {
   points = [];
   velocities = [];
@@ -367,7 +374,7 @@ function keyPressed() {
     case 73: // 'I'
       invertColors(); break;
     case 77: // 'M'
-      shouldMutate = false
+      toggleMutation();
       //toggleSmoothing();
       break;
     case 88: // 'X'
@@ -382,6 +389,9 @@ function keyPressed() {
       break;
     case 87: // 'W'
       showDots = !showDots;
+      break;
+       case 72: // 'H'
+      showUI = false;
       break;
     case 82: // 'R'
       recolor();
@@ -618,21 +628,22 @@ function draw() {
 
 
   if (fillMode === "worm") {
-    strokeWeight(2);
+    strokeWeight(1);
     fill(fillColor);
     stroke(edgeColor);
     for (let i = 0; i < points.length; i++) {
       // Calculate the size of the ellipse based on its position in the array
       let distanceToStart = i; // Distance from the current point to the start of the shape
       let distanceToEnd = points.length - 1 - i; // Distance from the current point to the end of the shape
-      let ellipseSize = min(min(distanceToStart + 1, distanceToEnd + 1), strokeW*2);
+      let ellipseSize = strokeW;
       ellipse(points[i].x, points[i].y, ellipseSize, ellipseSize);
     }
     
   }
   if (fillMode === "outline") {
+    if (showDots == true){
     // Draw dots at each point
-    strokeWeight(2);
+    strokeWeight(1);
     fill(fillColor);
     stroke(edgeColor);
     for (let i = 0; i < points.length; i++) {
@@ -641,6 +652,7 @@ function draw() {
       let distanceToEnd = points.length - 1 - i; // Distance from the current point to the end of the shape
       let ellipseSize = min(min(distanceToStart + 1, distanceToEnd + 1), 2);
       ellipse(points[i].x, points[i].y, ellipseSize, ellipseSize);
+    }
     }
     
   }
@@ -660,17 +672,17 @@ function draw() {
   
 
  
-  fill(255, 255, 255, 255);
-  noStroke();
-  circle(mouseX - width / 2, mouseY - height / 2, 5); // Inner dot
-  fill(100, 100, 100, 75);
-  circle(mouseX - width / 2, mouseY - height / 2,touchRadius * 2); // Outer cursor
+//   fill(255, 255, 255, 255);
+//   noStroke();
+//   circle(mouseX - width / 2, mouseY - height / 2, 5); // Inner dot
+//   fill(100, 100, 100, 75);
+//   circle(mouseX - width / 2, mouseY - height / 2,touchRadius * 2); // Outer cursor
 
 
-  if (mouseIsPressed === true) {
-    fill(guiTextColor);
-    circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6); // Active cursor
-  }
+//   if (mouseIsPressed === true) {
+//     fill(guiTextColor);
+//     circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6); // Active cursor
+//   }
   if (bgColor === 'white') {
     document.body.classList.add('light-theme');
     document.body.classList.remove('dark-theme');
@@ -709,8 +721,8 @@ function mutation() {
   if (!shouldMutate) return; // Skip mutation logic if toggled off
 
   for (let i = 0; i < points.length; i++) {
-    points[i].x += velocities[i].vx;
-    points[i].y += velocities[i].vy;
+    points[i].x += 0.2*velocities[i].vx;
+    points[i].y += 0.2*velocities[i].vy;
 
     // Check for collisions and change direction
     for (let j = 0; j < points.length; j++) {
@@ -718,7 +730,7 @@ function mutation() {
         let dx = points[i].x - points[j].x;
         let dy = points[i].y - points[j].y;
         let distance = sqrt(dx * dx + dy * dy);
-        if (distance < 10) { // Adjust collision distance as needed
+        if (distance < 2) { // Adjust collision distance as needed
           velocities[i].vx *= -1;
           velocities[i].vy *= -1;
           velocities[j].vx *= -1;
