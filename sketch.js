@@ -18,14 +18,14 @@ let edgeColor = 'black';
 // Modifier
 let currentMode = "attract"; // Current mode for brush interaction ("attract" or "repulse")
 let touchRadius = 100; // Size of the tool
-let touchForce = 20; // Force of interaction
+let touchForce = 10; // Force of interaction
 let smoothing = 1; // Smoothing factor for blob
 let explosionForce = 800;
 
 //Mutation
 let shouldMutate = true;
 let velocities = [];
-let mutationSpeed = 50;
+let mutationSpeed = 20;
 let noiseScale = 1;
 let smoothingEnabled = true;
 let amplitude = 1;
@@ -53,7 +53,7 @@ let currentWidth, currentHeight;
 let button;
 let encoder;
 const frate = 25 // frame rate;
-const numFrames = 500 // num of frames to record;
+const numFrames = 250 // num of frames to record;
 let recording = false;
 let recordedFrames = 0;
 let count = 0;
@@ -82,20 +82,21 @@ function preload() {
 }
 function setup() {
   
-  frameRate(25);
+  frameRate(30);
   createCanvas(windowWidth, windowHeight);
   currentWidth = windowWidth;
   currentHeight = windowHeight;
   //strokeW = random (1,60);
   strokeW = 3;
  // amount = random (100,1000)
-  amount = 1000;
+  amount = 500;
   fillMode = "outline"; // Default fill mode
   recolor();
   showUI = true;
   createUI();
   //noCursor();
   generateShape();
+  invertColors();
   
 }
 function createUI() {
@@ -155,7 +156,7 @@ function createUI() {
   label6.position(10, sliderPos);
   label6.class('text');
 
-  sliders.mutationSpeed = createSlider(10, 20, mutationSpeed);
+  sliders.mutationSpeed = createSlider(10, 50, mutationSpeed);
   sliders.mutationSpeed.position(10, sliderPos + sliderLabelDist);
   sliders.mutationSpeed.class('slider');
   sliders.mutationSpeed.input(() => {
@@ -170,7 +171,7 @@ function createUI() {
   label7.position(10, sliderPos);
   label7.class('text');
 
-  sliders.blobSize = createSlider(300, canvas.width/2, blobSize);
+  sliders.blobSize = createSlider(canvas.width/4, canvas.width/2, blobSize);
   sliders.blobSize.position(10, sliderPos + sliderLabelDist);
   sliders.blobSize.class('slider');
   sliders.blobSize.input(() => {
