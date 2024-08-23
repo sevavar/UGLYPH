@@ -121,7 +121,7 @@ function createUI() {
   label5.position(10, sliderPos);
   label5.class('text');
 
-  sliders.force = createSlider(20, 200, touchForce);
+  sliders.force = createSlider(10, 20, touchForce);
   sliders.force.position(10, sliderPos + sliderLabelDist);
   sliders.force.class('slider');
   sliders.force.input(() => touchForce = sliders.force.value());
