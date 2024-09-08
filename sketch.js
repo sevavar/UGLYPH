@@ -1,8 +1,12 @@
 // Blob
 let points = []; // Array to store blob vertex points
-let amount = 1000; // Number of blob points
+let amount = 1500; // Number of blob points
 let blobSize = 600; // Size of the blob
 let showDots = false; // Variable to manage dot visibility
+let spiky = true;
+let bpm = 60;  // Set your BPM here
+let framesPerBeat;
+
 
 // Blob Style
 let dotSize = 1;
@@ -20,29 +24,31 @@ let currentMode = "attract"; // Current mode for brush interaction ("attract" or
 let touchRadius = 100; // Size of the tool
 let touchForce = 10; // Force of interaction
 let smoothing = 1; // Smoothing factor for blob
-let explosionForce = 800;
+let explosionForce = 400;
 
 //Mutation
 let shouldMutate = true;
 let velocities = [];
 let mutationSpeed = 20;
-let noiseScale = 1;
+let noiseScale = 0.01;
 let smoothingEnabled = true;
-let amplitude = 1;
-let frequency = 0.001;
+let amplitude = 0.1;
+let frequency = 10;
 
 // UI
+let labelInfo;
+let uiContainer;
+let canvasContainer;
 let showUI = true;
 let sliders = {};
 let buttons = {};
 let textOpacity = 255; // Text opacity
-let showUi = true; // Flag to show or hide the UI
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
-let sliderPos = 30;
+let sliderPos = 80;
 let sliderDist = 45;
 let sliderLabelDist = 20;
-let buttonPos = 320;
+let buttonPos = 450;
 let uiDist = 40;
 let currentWidth, currentHeight;
 
@@ -80,81 +86,81 @@ function preload() {
         encoder.initialize();
     });
 }
-function setup() {
-  
-  frameRate(30);
-  createCanvas(windowWidth, windowHeight);
-  currentWidth = windowWidth;
-  currentHeight = windowHeight;
-  //strokeW = random (1,60);
-  strokeW = 3;
- // amount = random (100,1000)
-  amount = 500;
-  fillMode = "outline"; // Default fill mode
-  recolor();
-  showUI = true;
-  createUI();
-  //noCursor();
-  generateShape();
-  invertColors();
-  
-}
+
+
 function createUI() {
-    if (showUI == true) {
-    
-  let label1 = createP ('UGLYPH v0.71a');
+  if (showUI == true) {
+           
+  let uiContainer = select('#ui-container');
+     
+  let label1 = createP ('UGLYPH v0.72a');
   label1.position(10, -5);
   label1.class('text');
+  label1.parent(uiContainer);
+    
+  let labelInfo = createP ('Touch the shape,<br> play with settings<br>for different results');
+  labelInfo.position(10, 15);
+  labelInfo.class('text');
+  labelInfo.parent(uiContainer);
   
   let label2 = createP ('Interaction Radius');
   label2.position(10, sliderPos);
   label2.class('text');
-
+  label2.parent(uiContainer);
+  //label2.mouseOver(() => updateLabel('Adjust the slider to change value of X.'));
+  //label2.mouseOut(() => resetLabel());
+      
   sliders.touchRadius = createSlider(10, 200, touchRadius);
   sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
   sliders.touchRadius.class('slider');
   sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
   sliderPos += sliderDist;
+  sliders.touchRadius.parent(uiContainer);    
   
   
   let label5 = createP ('Interaction Force');
   label5.position(10, sliderPos);
   label5.class('text');
+  label5.parent(uiContainer);
 
-  sliders.force = createSlider(10, 20, touchForce);
+  sliders.force = createSlider(20, 200, touchForce);
   sliders.force.position(10, sliderPos + sliderLabelDist);
   sliders.force.class('slider');
   sliders.force.input(() => touchForce = sliders.force.value());
   sliderPos += sliderDist;
+  sliders.force.parent(uiContainer);  
   
   let label3 = createP ('Outline');
   label3.position(10, sliderPos);
   label3.class('text');
+  label3.parent(uiContainer);    
 
   sliders.strokeW = createSlider(1, 200, strokeW);
   sliders.strokeW.position(10, sliderPos + sliderLabelDist);
   sliders.strokeW.class('slider');
   sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
   sliderPos += sliderDist;
+  sliders.strokeW.parent(uiContainer);
   
-  let label4 = createP ('Complexity');
+  let label4 = createP ('Number of Dots');
   label4.position(10, sliderPos);
   label4.class('text');
+  label4.parent(uiContainer);
 
   sliders.amount = createSlider(100, 1000, amount);
   sliders.amount.position(10, sliderPos + sliderLabelDist);
   sliders.amount.class('slider');
   sliders.amount.input(() => { amount = sliders.amount.value();
-                         
-  generateShape();
-                         
+  generateShape();                       
   });
   sliderPos += sliderDist;
+  sliders.amount.parent(uiContainer);
   
   
   let label6 = createP ('Mutation Speed');
   label6.position(10, sliderPos);
   label6.class('text');
+  label6.parent(uiContainer);
 
   sliders.mutationSpeed = createSlider(10, 50, mutationSpeed);
   sliders.mutationSpeed.position(10, sliderPos + sliderLabelDist);
@@ -164,12 +170,15 @@ function createUI() {
     generateShape();
   });
   sliderPos += sliderDist;
-  
-  
+  sliders.mutationSpeed.parent(uiContainer);
+    
+    
+    
 
  let label7 = createP ('Size');
   label7.position(10, sliderPos);
   label7.class('text');
+  label7.parent(uiContainer);
 
   sliders.blobSize = createSlider(canvas.width/4, canvas.width/2, blobSize);
   sliders.blobSize.position(10, sliderPos + sliderLabelDist);
@@ -179,16 +188,46 @@ function createUI() {
     generateShape();
   });
   sliderPos += sliderDist;
+  sliders.blobSize.parent(uiContainer);
+    
+  let label8 = createP ('Explosion Force');
+  label8.position(10, sliderPos);
+  label8.class('text');
+  label8.parent(uiContainer);
+
+  sliders.explosionForce = createSlider(1, 400, explosionForce);
+  sliders.explosionForce.position(10, sliderPos + sliderLabelDist);
+  sliders.explosionForce.class('slider');
+  sliders.explosionForce.input(() => {
+    explosionForce = sliders.explosionForce.value();
+  });
+  sliderPos += sliderDist;
+  sliders.blobSize.parent(uiContainer);
+    
+    let label9 = createP ('BPM');
+  label9.position(10, sliderPos);
+  label9.class('text');
+  label9.parent(uiContainer);
+
+  sliders.bpm = createSlider(10, 100, bpm);
+  sliders.bpm.position(10, sliderPos + sliderLabelDist);
+  sliders.bpm.class('slider');
+  sliders.bpm.input(() => {
+    bpm = sliders.bpm.value();
+  });
+  sliderPos += sliderDist;
+  sliders.blobSize.parent(uiContainer);  
+    
   
-  
-    buttons.restart = createButton(`
-    <span class="left-align">↻</span>
-    <span class="center-align">Restart</span>
-    <span class="right-align">Esc</span>`);
+  buttons.restart = createButton(`
+  <span class="left-align">↻</span>
+  <span class="center-align">Restart</span>
+  <span class="right-align">Esc</span>`);
   buttons.restart.position(10,  buttonPos);
   buttons.restart.class('button');
   buttons.restart.mousePressed(reloadWindow);
   buttonPos += uiDist;
+  buttons.restart.parent(uiContainer);
   
   
   buttons.pause = createButton(
@@ -201,6 +240,7 @@ function createUI() {
   buttons.pause.class('button');
   buttons.pause.mousePressed(toggleSmoothing);
   buttonPos += uiDist;
+  buttons.pause.parent(uiContainer);
 
   buttons.mutation = createButton(`
     <span class="left-align">☣</span>
@@ -210,6 +250,19 @@ function createUI() {
   buttons.mutation.class('button');
   buttons.mutation.mousePressed(toggleMutation);
   buttonPos += uiDist;
+  buttons.mutation.parent(uiContainer);
+    
+    
+      buttons.shapeType = createButton(`
+    <span class="left-align">★</span>
+    <span class="center-align">Spiky/Blobby</span>
+    <span class="right-align">B</span>`);
+  
+  buttons.shapeType.position(10, buttonPos);
+  buttons.shapeType.class('button');
+  buttons.shapeType.mousePressed(toggleShapeType);
+  buttonPos += uiDist;
+  buttons.shapeType.parent(uiContainer);
   
   buttons.brushMode = createButton(`
     <span class="left-align">±</span>
@@ -220,6 +273,7 @@ function createUI() {
   buttons.brushMode.class('button');
   buttons.brushMode.mousePressed(toggleAttractionRepulsion);
   buttonPos += uiDist;
+  buttons.brushMode.parent(uiContainer);
   
   buttons.explode = createButton(`
     <span class="left-align">✱</span>
@@ -230,6 +284,7 @@ function createUI() {
   buttons.explode.class('button');
   buttons.explode.mousePressed(explode);
   buttonPos += uiDist;
+  buttons.explode.parent(uiContainer);
   
     buttons.changeMode = createButton(`
     <span class="left-align">✧</span>
@@ -240,6 +295,7 @@ function createUI() {
   buttons.changeMode.class('button');
   buttons.changeMode.mousePressed(toggleFillMode);
   buttonPos += uiDist;
+  buttons.changeMode.parent(uiContainer);
   
   buttons.recolor = createButton(`
     <span class="left-align">⸭</span>
@@ -250,6 +306,7 @@ function createUI() {
   buttons.recolor.class('button');
   buttons.recolor.mousePressed(recolor);
   buttonPos += uiDist;
+  buttons.recolor.parent(uiContainer);
 
   buttons.invertColors = createButton(`
     <span class="left-align">☯</span>
@@ -260,6 +317,7 @@ function createUI() {
   buttons.invertColors.class('button');
   buttons.invertColors.mousePressed(invertColors);
   buttonPos += uiDist;
+  buttons.invertColors.parent(uiContainer);
   
   
   buttons.sPNG = createButton(`
@@ -269,6 +327,7 @@ function createUI() {
   buttons.sPNG.position(10,  buttonPos);
   buttons.sPNG.class('smallbutton');
   buttons.sPNG.mousePressed(savePNG);
+  buttons.sPNG.parent(uiContainer);
   
   buttons.sSVG = createButton(`
   <span class="center-align">SVG</span>
@@ -276,6 +335,7 @@ function createUI() {
   buttons.sSVG.position(60,  buttonPos);
   buttons.sSVG.class('smallbutton');
   buttons.sSVG.mousePressed(copyAndSaveSVG);
+  buttons.sSVG.parent(uiContainer);
   
   buttons.sGIF = createButton(`
     <span class="center-align">GIF</span>
@@ -283,6 +343,7 @@ function createUI() {
   buttons.sGIF.position(110,  buttonPos);
   buttons.sGIF.class('smallbutton');
   buttons.sGIF.mousePressed(recordGIF);
+  buttons.sGIF.parent(uiContainer);
   
   buttons.sMP4 = createButton(`
   <span class="center-align">MP4</span>
@@ -290,16 +351,42 @@ function createUI() {
   buttons.sMP4.position(160,  buttonPos);
   buttons.sMP4.class('smallbutton');
   buttons.sMP4.mousePressed(() => recording = true)
-  
-  
-
-  
-
-
+  buttons.sMP4.parent(uiContainer);
 }
-
+  
+  
+  
+//   let labelCredits = createP ('<a href = "https://www.instagram.com/uglyph.xyz" target="blank">@uglyph.xyz</a>');
+//   labelCredits.position(10, buttonPos+50);
+//   labelCredits.class('text');
+//   labelCredits.parent(uiContainer);
+  
+//   let labelCredits2 = createP ('<a href = "https://www.instagram.com/sevavar" target="blank">@sevavar</a>');
+//   labelCredits2.position(10, buttonPos+65);
+//   labelCredits2.class('text');
+//   labelCredits2.parent(uiContainer);
+  
+  
 }
+function setup() {
+    let canvasContainer = select('#canvas-container');
+    let canvas = createCanvas(windowWidth - 220, windowHeight);  // Adjust the width to exclude the UI column
+    canvas.parent(canvasContainer);
+   
 
+
+    frameRate(60);
+    framesPerBeat = (60 / bpm) * frameRate();  // Calculate frames per beat
+    currentWidth = windowWidth;
+    currentHeight = windowHeight;
+    strokeW = 3;
+    fillMode = "outline"; // Default fill mode
+    recolor();
+    showUI = true;
+    createUI();
+    generateShape();
+    invertColors();
+}
 function generateShape() {
   points = [];
   velocities = [];
@@ -308,11 +395,12 @@ function generateShape() {
     let y = windowHeight / 2;
     let angle = map(i, 0, amount, 0, TWO_PI);
     let radius = (blobSize) * noise(noiseScale * i);
-    x = windowWidth / 2 + radius * cos(angle) - 0.5 * width;
+    x = windowWidth / 2 + radius * cos(angle) - 0.5 *(currentWidth);
     y = windowHeight / 2 + radius * sin(angle) - 0.5 * height;
     points.push({ x: x, y: y });
     velocities.push({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) });
   }
+  
 }
 function setTouchForce(speedValue) {
   touchForce = speedValue;
@@ -329,7 +417,6 @@ function adjustStrokeWidth(amount) {
     strokeW = 1;
   }
 }
-
 function windowResized() {
   currentWidth = windowWidth;
   currentHeight = windowHeight;
@@ -339,6 +426,9 @@ function keyPressed() {
   switch (keyCode) {
     case 65: // 'A'
       toggleAttractionRepulsion();
+      break;
+      case 66: // 'B'
+      toggleShapeType();
       break;
     case 49: // '1'
     case 50: // '2'
@@ -573,20 +663,29 @@ function createFileName(prefix, extension){
   return `${prefix}_${datePart}${timePart}.${extension}`;
 }
 function reloadWindow() {
-  window.location.reload();
+  //generateShape();
+  window.reload();
+  //window.location.reload();
 }
-
 function toggleDots() {
   dotsEnabled = (dotsEnabled === 'true') ? 'false' : 'true';
 }
+function draw(){
+ // {
+  // console.log(framesPerBeat);
+  //     if (frameCount % (bpm) === 0) {
+  //   explode();
+  //       //console.log('Boom!');
+  //       console.log(framesPerBeat);
 
-function draw() {
+  //}
   
   translate(width / 2, height / 2);
   background(bgColor);
   strokeWeight(strokeW);
   stroke(fillColor);
 
+  
   if (fillMode === "filled") {
     fill(fillColor);
     noStroke();
@@ -601,7 +700,7 @@ function draw() {
   }
 
   if (smoothingEnabled) {
-    mutation();
+   mutation();
     // Blob smoothing with vibration using Perlin noise
     for (let i = 0; i < points.length; i++) {
       let prev = points[(i - 1 + points.length) % points.length];
@@ -619,13 +718,24 @@ function draw() {
 
   // Blob outline smoothing
   beginShape();
+  if (spiky == false) {
   for (let i = 0; i < points.length; i++) {
     curveVertex(points[i].x, points[i].y);
   }
   // Close the shape by connecting the last point to the first
   curveVertex(points[0].x, points[0].y);
   curveVertex(points[1].x, points[1].y);
+  }
+  else {
+     beginShape();
+  for (let i = 0; i < points.length; i++) {
+    vertex(points[i].x, points[i].y);
+  }
+  }
+  
   endShape(CLOSE);
+  
+  
 
 
   if (fillMode === "worm") {
@@ -751,4 +861,7 @@ function mutation() {
 }
 function toggleMutation() {
   shouldMutate = !shouldMutate; // Toggle the boolean flag
+}
+function toggleShapeType() {
+  spiky = !spiky;
 }
