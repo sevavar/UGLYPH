@@ -1,7 +1,7 @@
 // Blob
 let points = []; // Array to store blob vertex points
 let amount = 1500; // Number of blob points
-let blobSize = 600; // Size of the blob
+let blobSize = 300; // Size of the blob
 let showDots = false; // Variable to manage dot visibility
 let spiky = true;
 let bpm = 60;  // Set your BPM here
@@ -26,14 +26,17 @@ let touchForce = 10; // Force of interaction
 let smoothing = 1; // Smoothing factor for blob
 let explosionForce = 400;
 
+
 //Mutation
 let shouldMutate = true;
+let prevShouldMutate = null;
 let velocities = [];
 let mutationSpeed = 20;
 let noiseScale = 0.01;
 let smoothingEnabled = true;
 let amplitude = 0.1;
 let frequency = 10;
+let reactionDistance = 1.5;
 
 // UI
 let labelInfo;
@@ -45,7 +48,7 @@ let buttons = {};
 let textOpacity = 255; // Text opacity
 let guiTextColor = '#bababa';
 let uiColor = '#666666';
-let sliderPos = 80;
+let sliderPos = 50;
 let sliderDist = 45;
 let sliderLabelDist = 20;
 let buttonPos = 450;
@@ -93,61 +96,28 @@ function createUI() {
            
   let uiContainer = select('#ui-container');
      
-  let label1 = createP ('UGLYPH v0.72a');
+  let label1 = createP ('UGLYPH v0.73a');
   label1.position(10, -5);
   label1.class('text');
   label1.parent(uiContainer);
     
-  let labelInfo = createP ('Touch the shape,<br> play with settings<br>for different results');
+  let labelInfo = createP ('Shape Mutation Tool');
   labelInfo.position(10, 15);
   labelInfo.class('text');
   labelInfo.parent(uiContainer);
   
-  let label2 = createP ('Interaction Radius');
-  label2.position(10, sliderPos);
-  label2.class('text');
-  label2.parent(uiContainer);
-  //label2.mouseOver(() => updateLabel('Adjust the slider to change value of X.'));
-  //label2.mouseOut(() => resetLabel());
-      
-  sliders.touchRadius = createSlider(10, 200, touchRadius);
-  sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
-  sliders.touchRadius.class('slider');
-  sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
-  sliderPos += sliderDist;
-  sliders.touchRadius.parent(uiContainer);    
-  
-  
-  let label5 = createP ('Interaction Force');
-  label5.position(10, sliderPos);
-  label5.class('text');
-  label5.parent(uiContainer);
+  let section1 = createP ('GENERATION');
+  section1.position(10, sliderPos);
+  section1.class('sectionName');
+  sliderPos += 25;
+  section1.parent(uiContainer);  
 
-  sliders.force = createSlider(20, 200, touchForce);
-  sliders.force.position(10, sliderPos + sliderLabelDist);
-  sliders.force.class('slider');
-  sliders.force.input(() => touchForce = sliders.force.value());
-  sliderPos += sliderDist;
-  sliders.force.parent(uiContainer);  
-  
-  let label3 = createP ('Outline');
-  label3.position(10, sliderPos);
-  label3.class('text');
-  label3.parent(uiContainer);    
-
-  sliders.strokeW = createSlider(1, 200, strokeW);
-  sliders.strokeW.position(10, sliderPos + sliderLabelDist);
-  sliders.strokeW.class('slider');
-  sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
-  sliderPos += sliderDist;
-  sliders.strokeW.parent(uiContainer);
-  
-  let label4 = createP ('Number of Dots');
+  let label4 = createP ('Vertices');
   label4.position(10, sliderPos);
   label4.class('text');
   label4.parent(uiContainer);
 
-  sliders.amount = createSlider(100, 1000, amount);
+  sliders.amount = createSlider(100, 2000, amount);
   sliders.amount.position(10, sliderPos + sliderLabelDist);
   sliders.amount.class('slider');
   sliders.amount.input(() => { amount = sliders.amount.value();
@@ -155,9 +125,30 @@ function createUI() {
   });
   sliderPos += sliderDist;
   sliders.amount.parent(uiContainer);
+    
+  let label7 = createP ('Size');
+  label7.position(10, sliderPos);
+  label7.class('text');
+  label7.parent(uiContainer);
+
+  sliders.blobSize = createSlider(canvas.width/4, canvas.width/2, blobSize);
+  sliders.blobSize.position(10, sliderPos + sliderLabelDist);
+  sliders.blobSize.class('slider');
+  sliders.blobSize.input(() => {
+  blobSize = sliders.blobSize.value();
+  generateShape();
+  });
+  sliderPos += sliderDist;
+  sliders.blobSize.parent(uiContainer);
   
-  
-  let label6 = createP ('Mutation Speed');
+  sliderPos += 10;  
+  let section2 = createP ('MUTATION');
+  section2.position(10, sliderPos);
+  section2.class('sectionName');
+  sliderPos += 25;
+  section2.parent(uiContainer);
+    
+  let label6 = createP ('Speed');
   label6.position(10, sliderPos);
   label6.class('text');
   label6.parent(uiContainer);
@@ -172,24 +163,111 @@ function createUI() {
   sliderPos += sliderDist;
   sliders.mutationSpeed.parent(uiContainer);
     
-    
-    
+      let label9 = createP ('Tension');
+  label9.position(10, sliderPos);
+  label9.class('text');
+  label9.parent(uiContainer);
 
- let label7 = createP ('Size');
-  label7.position(10, sliderPos);
-  label7.class('text');
-  label7.parent(uiContainer);
+  sliders.reactionDistance = createSlider(0.1, 20, reactionDistance);
+  sliders.reactionDistance.position(10, sliderPos + sliderLabelDist);
+  sliders.reactionDistance.class('slider');
+  sliders.reactionDistance.input(() => {
+    reactionDistance = sliders.reactionDistance.value();
 
-  sliders.blobSize = createSlider(canvas.width/4, canvas.width/2, blobSize);
-  sliders.blobSize.position(10, sliderPos + sliderLabelDist);
-  sliders.blobSize.class('slider');
-  sliders.blobSize.input(() => {
-    blobSize = sliders.blobSize.value();
-    generateShape();
   });
   sliderPos += sliderDist;
-  sliders.blobSize.parent(uiContainer);
+  sliders.reactionDistance.parent(uiContainer);
+      sliderPos += 10; 
+  
     
+    buttons.mutation = createButton(`
+    <span class="left-align">☣</span>
+    <span class="center-align">Start / Stop</span>
+    <span class="right-align">M</span>`);
+  buttons.mutation.position(10,sliderPos);
+  buttons.mutation.class('button');
+  buttons.mutation.mousePressed(toggleMutation);
+  sliderPos += uiDist;
+  buttons.mutation.parent(uiContainer);
+     buttons.mutation.html(`
+    <span class="left-align">☣</span>
+    <span class="center-align">${shouldMutate ? 'Stop' : 'Start'}</span>
+    <span class="right-align">M</span>`);
+    
+
+  
+  buttons.freeze = createButton(
+                                 `
+    <span class="left-align">❄</span>
+    <span class="center-align">Freeze</span>
+    <span class="right-align">Space</span>
+  `);
+  buttons.freeze.position(10,  sliderPos);
+  buttons.freeze.class('button');
+  buttons.freeze.mousePressed(toggleSmoothing);
+  sliderPos += uiDist;
+  buttons.freeze.parent(uiContainer);
+    
+       buttons.reset = createButton(`
+  <span class="left-align">↻</span>
+  <span class="center-align">Reset</span>
+  <span class="right-align">Esc</span>`);
+  buttons.reset.position(10,  sliderPos);
+  buttons.reset.class('button');
+  buttons.reset.mousePressed(reloadWindow);
+  sliderPos += uiDist;
+  buttons.reset.parent(uiContainer);
+  
+
+ 
+  sliderPos += 10;  
+  let section3 = createP ('INTERACTION');
+  section3.position(10, sliderPos);
+  section3.class('sectionName');
+  sliderPos += 25;
+  section3.parent(uiContainer);
+    
+  buttons.brushMode = createButton(`
+    <span class="left-align">±</span>
+    <span class="center-align">Attract/Repulse</span>
+    <span class="right-align">A</span>`);
+  
+  buttons.brushMode.position(10, sliderPos);
+  buttons.brushMode.class('button');
+  buttons.brushMode.mousePressed(toggleAttractionRepulsion);
+  sliderPos += uiDist;
+  buttons.brushMode.parent(uiContainer);
+    
+    
+  let label2 = createP ('Cursor Radius');
+  label2.position(10, sliderPos);
+  label2.class('text');
+  label2.parent(uiContainer);
+  //label2.mouseOver(() => updateLabel('Adjust the slider to change value of X.'));
+  //label2.mouseOut(() => resetLabel());
+      
+  sliders.touchRadius = createSlider(10, 200, touchRadius);
+  sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
+  sliders.touchRadius.class('slider');
+  sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
+  sliderPos += sliderDist;
+  sliders.touchRadius.parent(uiContainer);    
+  
+  
+  let label5 = createP ('Cursor Force');
+  label5.position(10, sliderPos);
+  label5.class('text');
+  label5.parent(uiContainer);
+
+  sliders.force = createSlider(20, 200, touchForce);
+  sliders.force.position(10, sliderPos + sliderLabelDist);
+  sliders.force.class('slider');
+  sliders.force.input(() => touchForce = sliders.force.value());
+  sliderPos += sliderDist;
+  sliders.force.parent(uiContainer);
+  
+    
+  
   let label8 = createP ('Explosion Force');
   label8.position(10, sliderPos);
   label8.class('text');
@@ -202,129 +280,126 @@ function createUI() {
     explosionForce = sliders.explosionForce.value();
   });
   sliderPos += sliderDist;
-  sliders.blobSize.parent(uiContainer);
-    
-    let label9 = createP ('BPM');
-  label9.position(10, sliderPos);
-  label9.class('text');
-  label9.parent(uiContainer);
+  sliders.blobSize.parent(uiContainer); 
 
-  sliders.bpm = createSlider(10, 100, bpm);
-  sliders.bpm.position(10, sliderPos + sliderLabelDist);
-  sliders.bpm.class('slider');
-  sliders.bpm.input(() => {
-    bpm = sliders.bpm.value();
-  });
+  sliderPos += 10;  
+  buttons.explode = createButton(`
+  <span class="left-align">✱</span>
+  <span class="center-align">Explode</span>
+  <span class="right-align">X</span>`);
+  
+  buttons.explode.position(10, sliderPos);
+  buttons.explode.class('button');
+  buttons.explode.mousePressed(explode);
+  sliderPos += uiDist;
+  buttons.explode.parent(uiContainer);
+ 
+ 
+    
+  sliderPos += 10;  
+  let section4 = createP ('STYLE');
+  section4.position(10, sliderPos);
+  section4.class('sectionName');
+  sliderPos += 25;
+  section4.parent(uiContainer);  
+    
+    
+    
+
+    
+//     let label9 = createP ('BPM');
+//   label9.position(10, sliderPos);
+//   label9.class('text');
+//   label9.parent(uiContainer);
+
+//   sliders.bpm = createSlider(10, 100, bpm);
+//   sliders.bpm.position(10, sliderPos + sliderLabelDist);
+//   sliders.bpm.class('slider');
+//   sliders.bpm.input(() => {
+//     bpm = sliders.bpm.value();
+//   });
+//   sliderPos += sliderDist;
+//   sliders.blobSize.parent(uiContainer);  
+    
+    
+    
+  
+  let label3 = createP ('Outline Stroke');
+  label3.position(10, sliderPos);
+  label3.class('text');
+  label3.parent(uiContainer);    
+
+  sliders.strokeW = createSlider(1, 200, strokeW);
+  sliders.strokeW.position(10, sliderPos + sliderLabelDist);
+  sliders.strokeW.class('slider');
+  sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
   sliderPos += sliderDist;
-  sliders.blobSize.parent(uiContainer);  
+  sliders.strokeW.parent(uiContainer);
+  
     
+      buttons.changeMode = createButton(`
+    <span class="left-align">✧</span>
+    <span class="center-align">Switch Style</span>
+    <span class="right-align">F</span>`);
   
-  buttons.restart = createButton(`
-  <span class="left-align">↻</span>
-  <span class="center-align">Restart</span>
-  <span class="right-align">Esc</span>`);
-  buttons.restart.position(10,  buttonPos);
-  buttons.restart.class('button');
-  buttons.restart.mousePressed(reloadWindow);
-  buttonPos += uiDist;
-  buttons.restart.parent(uiContainer);
-  
-  
-  buttons.pause = createButton(
-                                 `
-    <span class="left-align">❄</span>
-    <span class="center-align">Freeze</span>
-    <span class="right-align">Space</span>
-  `);
-  buttons.pause.position(10,  buttonPos);
-  buttons.pause.class('button');
-  buttons.pause.mousePressed(toggleSmoothing);
-  buttonPos += uiDist;
-  buttons.pause.parent(uiContainer);
-
-  buttons.mutation = createButton(`
-    <span class="left-align">☣</span>
-    <span class="center-align">Mutation</span>
-    <span class="right-align">M</span>`);
-  buttons.mutation.position(10,buttonPos);
-  buttons.mutation.class('button');
-  buttons.mutation.mousePressed(toggleMutation);
-  buttonPos += uiDist;
-  buttons.mutation.parent(uiContainer);
-    
+  buttons.changeMode.position(10, sliderPos);
+  buttons.changeMode.class('button');
+  buttons.changeMode.mousePressed(toggleFillMode);
+  sliderPos += uiDist;
+  buttons.changeMode.parent(uiContainer);
+ 
     
       buttons.shapeType = createButton(`
     <span class="left-align">★</span>
-    <span class="center-align">Spiky/Blobby</span>
+    <span class="center-align">Spikes</span>
     <span class="right-align">B</span>`);
   
-  buttons.shapeType.position(10, buttonPos);
+  buttons.shapeType.position(10, sliderPos);
   buttons.shapeType.class('button');
   buttons.shapeType.mousePressed(toggleShapeType);
-  buttonPos += uiDist;
+  sliderPos += uiDist;
   buttons.shapeType.parent(uiContainer);
   
-  buttons.brushMode = createButton(`
-    <span class="left-align">±</span>
-    <span class="center-align">Attract/Repulse</span>
-    <span class="right-align">A</span>`);
-  
-  buttons.brushMode.position(10, buttonPos);
-  buttons.brushMode.class('button');
-  buttons.brushMode.mousePressed(toggleAttractionRepulsion);
-  buttonPos += uiDist;
-  buttons.brushMode.parent(uiContainer);
-  
-  buttons.explode = createButton(`
-    <span class="left-align">✱</span>
-    <span class="center-align">Explode</span>
-    <span class="right-align">X</span>`);
-  
-  buttons.explode.position(10, buttonPos);
-  buttons.explode.class('button');
-  buttons.explode.mousePressed(explode);
-  buttonPos += uiDist;
-  buttons.explode.parent(uiContainer);
-  
-    buttons.changeMode = createButton(`
-    <span class="left-align">✧</span>
-    <span class="center-align">Change&nbsp;Style</span>
-    <span class="right-align">F</span>`);
-  
-  buttons.changeMode.position(10, buttonPos);
-  buttons.changeMode.class('button');
-  buttons.changeMode.mousePressed(toggleFillMode);
-  buttonPos += uiDist;
-  buttons.changeMode.parent(uiContainer);
-  
   buttons.recolor = createButton(`
-    <span class="left-align">⸭</span>
-    <span class="center-align">Recolor</span>
+    <span class="left-align"> ? </span>
+    <span class="center-align">Random Colors</span>
     <span class="right-align">R</span>`);
   
-  buttons.recolor.position(10, buttonPos);
+  buttons.recolor.position(10, sliderPos);
   buttons.recolor.class('button');
   buttons.recolor.mousePressed(recolor);
-  buttonPos += uiDist;
+  sliderPos += uiDist;
   buttons.recolor.parent(uiContainer);
 
   buttons.invertColors = createButton(`
     <span class="left-align">☯</span>
-    <span class="center-align">Black&nbsp;&&nbsp;White</span>
+    <span class="center-align">Black / White</span>
     <span class="right-align">I</span>`);
   
-  buttons.invertColors.position(10, buttonPos);
+  buttons.invertColors.position(10, sliderPos);
   buttons.invertColors.class('button');
   buttons.invertColors.mousePressed(invertColors);
-  buttonPos += uiDist;
+  sliderPos += uiDist;
   buttons.invertColors.parent(uiContainer);
+    
   
+
+  
+  
+  
+    
+  sliderPos += 10;  
+  let section5 = createP ('EXPORT');
+  section5.position(10, sliderPos);
+  section5.class('sectionName');
+  sliderPos += 25;
+  section5.parent(uiContainer); 
   
   buttons.sPNG = createButton(`
     <span class="center-align">PNG</span>
     `);
   
-  buttons.sPNG.position(10,  buttonPos);
+  buttons.sPNG.position(10,  sliderPos);
   buttons.sPNG.class('smallbutton');
   buttons.sPNG.mousePressed(savePNG);
   buttons.sPNG.parent(uiContainer);
@@ -332,7 +407,7 @@ function createUI() {
   buttons.sSVG = createButton(`
   <span class="center-align">SVG</span>
   `);
-  buttons.sSVG.position(60,  buttonPos);
+  buttons.sSVG.position(60,  sliderPos);
   buttons.sSVG.class('smallbutton');
   buttons.sSVG.mousePressed(copyAndSaveSVG);
   buttons.sSVG.parent(uiContainer);
@@ -340,7 +415,7 @@ function createUI() {
   buttons.sGIF = createButton(`
     <span class="center-align">GIF</span>
   `);
-  buttons.sGIF.position(110,  buttonPos);
+  buttons.sGIF.position(110,  sliderPos);
   buttons.sGIF.class('smallbutton');
   buttons.sGIF.mousePressed(recordGIF);
   buttons.sGIF.parent(uiContainer);
@@ -348,7 +423,7 @@ function createUI() {
   buttons.sMP4 = createButton(`
   <span class="center-align">MP4</span>
 `);
-  buttons.sMP4.position(160,  buttonPos);
+  buttons.sMP4.position(160,  sliderPos);
   buttons.sMP4.class('smallbutton');
   buttons.sMP4.mousePressed(() => recording = true)
   buttons.sMP4.parent(uiContainer);
@@ -663,14 +738,17 @@ function createFileName(prefix, extension){
   return `${prefix}_${datePart}${timePart}.${extension}`;
 }
 function reloadWindow() {
-  //generateShape();
-  window.reload();
+  generateShape();
+  //window.reload();
   //window.location.reload();
 }
 function toggleDots() {
   dotsEnabled = (dotsEnabled === 'true') ? 'false' : 'true';
 }
 function draw(){
+  
+  
+  
  // {
   // console.log(framesPerBeat);
   //     if (frameCount % (bpm) === 0) {
@@ -679,6 +757,17 @@ function draw(){
   //       console.log(framesPerBeat);
 
   //}
+     
+  
+  
+   if (shouldMutate !== prevShouldMutate) {
+    buttons.mutation.html(`
+      <span class="left-align">${shouldMutate ? '■' : '▶'}</span>
+      <span class="center-align">${shouldMutate ? 'Stop' : 'Start'}</span>
+      <span class="right-align">M</span>`);
+    
+    prevShouldMutate = shouldMutate; // Update the previous state
+  }
   
   translate(width / 2, height / 2);
   background(bgColor);
@@ -688,7 +777,7 @@ function draw(){
   
   if (fillMode === "filled") {
     fill(fillColor);
-    noStroke();
+    stroke(fillColor);
   }
   else if (fillMode === "outline") {
     noFill();
@@ -841,7 +930,7 @@ function mutation() {
         let dx = points[i].x - points[j].x;
         let dy = points[i].y - points[j].y;
         let distance = sqrt(dx * dx + dy * dy);
-        if (distance < 2) { // Adjust collision distance as needed
+        if (distance < reactionDistance) { // Adjust collision distance as needed
           velocities[i].vx *= -1;
           velocities[i].vy *= -1;
           velocities[j].vx *= -1;
@@ -851,16 +940,19 @@ function mutation() {
     }
 
     // Keep points within canvas bounds
-    if (points[i].x < -width/2 || points[i].x > width/2) {
+    if (points[i].x < -width/2+(strokeW/2) || points[i].x > width/2-(strokeW/2)) {
       velocities[i].vx *= -1;
     }
-    if (points[i].y < -height/2 || points[i].y > height/2) {
+    if (points[i].y < -height/2+(strokeW/2) || points[i].y > height/2-(strokeW/2)) {
       velocities[i].vy *= -1;
     }
   }
 }
 function toggleMutation() {
   shouldMutate = !shouldMutate; // Toggle the boolean flag
+}
+function toggleShapeType() {
+spiky = !spiky;
 }
 function toggleShapeType() {
   spiky = !spiky;
