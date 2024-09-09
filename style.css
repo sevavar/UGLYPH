@@ -48,6 +48,16 @@ canvas {
     align-items: center;
     color: #ffffff;
 }
+
+.sectionName {
+display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+    opacity: 20%;
+    font-size: 12px;
+  letter-spacing: 0px;
+}
   
 a:link, a:visited, a:hover, a:active{
    color: #ffffff
