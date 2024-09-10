@@ -101,6 +101,16 @@ a:link, a:visited, a:hover, a:active{
     background-color: #BABABA;
 }
 
+.button:active  {
+  background-color: #000000;
+  text-color: #ffffff;
+}
+
+.smallbutton:active {
+  background-color: #ff0000;
+  text-color: #ffffff;
+}
+
 .smallbutton {
     width: 50px;
 }
@@ -197,3 +207,4 @@ input[type=range]:focus::-ms-fill-lower,
 input[type=range]:focus::-ms-fill-upper {
     background: #444444;
 }
+
