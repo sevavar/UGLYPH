@@ -101,7 +101,7 @@ function createUI() {
   label1.class('text');
   label1.parent(uiContainer);
     
-  let labelInfo = createP ('Shape Mutation Tool');
+  let labelInfo = createP ('Mutational Design Tool');
   labelInfo.position(10, 15);
   labelInfo.class('text');
   labelInfo.parent(uiContainer);
