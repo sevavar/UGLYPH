@@ -2,9 +2,9 @@
 let points = []; // Array to store blob vertex points
 let amount = 1500; // Number of blob points
 let blobSize = 300; // Size of the blob
-let showDots = false; // Variable to manage dot visibility
-let spiky = true;
-let bpm = 60;  // Set your BPM here
+let hideDots = true; // Variable to manage dot visibility
+let spiky = false;
+let bpm = 30;  // Set your BPM here
 let framesPerBeat;
 
 
@@ -30,11 +30,11 @@ let explosionForce = 400;
 //Mutation
 let shouldMutate = true;
 let prevShouldMutate = null;
+let smoothingEnabled = true;
 let velocities = [];
 let mutationSpeed = 20;
-let noiseScale = 0.01;
-let smoothingEnabled = true;
-let amplitude = 0.1;
+let noiseScale = 0.025;
+let amplitude = 1;
 let frequency = 10;
 let reactionDistance = 1.5;
 
@@ -61,13 +61,17 @@ let currentWidth, currentHeight;
 //let cheight = currentHeight;
 let button;
 let encoder;
-const frate = 25 // frame rate;
-const numFrames = 250 // num of frames to record;
+const frate = 60 // frame rate;
+const numFrames = 300 // num of frames to record;
 let recording = false;
 let recordedFrames = 0;
 let count = 0;
 let frameSkip = 1; // Adjust this value to control frame skipping
 let frameCounter = 0;
+
+
+//  GIF
+let gifDuration = 100;
 
 function preload() {
     HME.createH264MP4Encoder().then(enc => {
@@ -96,7 +100,7 @@ function createUI() {
            
   let uiContainer = select('#ui-container');
      
-  let label1 = createP ('UGLYPH v0.73a');
+  let label1 = createP ('UGLYPH v0.74');
   label1.position(10, -5);
   label1.class('text');
   label1.parent(uiContainer);
@@ -349,20 +353,20 @@ function createUI() {
   buttons.changeMode.parent(uiContainer);
  
     
-      buttons.shapeType = createButton(`
+      buttons.spikes = createButton(`
     <span class="left-align">★</span>
-    <span class="center-align">Spikes</span>
+    <span class="center-align">Show Spikes</span>
     <span class="right-align">B</span>`);
   
-  buttons.shapeType.position(10, sliderPos);
-  buttons.shapeType.class('button');
-  buttons.shapeType.mousePressed(toggleShapeType);
+  buttons.spikes.position(10, sliderPos);
+  buttons.spikes.class('button');
+  buttons.spikes.mousePressed(toggleShapeType);
   sliderPos += uiDist;
-  buttons.shapeType.parent(uiContainer);
+  buttons.spikes.parent(uiContainer);
   
   buttons.recolor = createButton(`
     <span class="left-align"> ? </span>
-    <span class="center-align">Random Colors</span>
+    <span class="center-align">Randomize Colors</span>
     <span class="right-align">R</span>`);
   
   buttons.recolor.position(10, sliderPos);
@@ -534,9 +538,9 @@ function keyPressed() {
     case 70: // 'F'
       toggleFillMode();
       break;
-    case 72: // 'H'
-      toggleTextGUI();
-      break;
+    //case 72: // 'H'
+      //toggleTextGUI();
+      //break;
     case 73: // 'I'
       invertColors(); break;
     case 77: // 'M'
@@ -553,11 +557,11 @@ function keyPressed() {
       case 86: //'V'
       recording = true;
       break;
-    case 87: // 'W'
-      showDots = !showDots;
+    case 72: // 'H'
+      hideDots = !hideDots;
       break;
        case 72: // 'H'
-      showUI = false;
+      //showUI = false;
       break;
     case 82: // 'R'
       recolor();
@@ -705,7 +709,8 @@ function copyAndSaveSVG() {
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
 function recordGIF() {
-  saveGif('uglyph.gif', 10,{ notificationDuration: 1 });
+  saveGif('uglyph.gif', gifDuration,{ units: 'frames', notificationDuration: 1, notificationID: 'customProgressBar' });
+  
 }
 function recordVideo() {
     // Get the dimensions of the canvas
@@ -725,6 +730,7 @@ function recordVideo() {
     recordedFrames++;
 
 }
+
 function saveBlob(blob, fileName) {
   let link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -769,6 +775,39 @@ function draw(){
     prevShouldMutate = shouldMutate; // Update the previous state
   }
   
+  if (smoothingEnabled === true) {
+    buttons.freeze.html(`
+    <span class="left-align">❄</span>
+    <span class="center-align">Freeze</span>
+    <span class="right-align">Space</span>
+      
+      `);
+    
+  }
+  else {
+    
+    buttons.freeze.html(` 
+    <span class="left-align">❄</span>
+    <span class="center-align">Unfreeze</span>
+    <span class="right-align">Space</span>
+      `);
+  }
+  
+  
+  if (spiky === true){
+    buttons.spikes.html(`
+    <span class="left-align">★</span>
+    <span class="center-align">Hide Spikes</span>
+    <span class="right-align">B</span>
+`);
+  }
+  else {
+    buttons.spikes.html(`
+  <span class="left-align">★</span>
+  <span class="center-align">Show Spikes</span>
+  <span class="right-align">B</span> `)
+}
+  
   translate(width / 2, height / 2);
   background(bgColor);
   strokeWeight(strokeW);
@@ -812,8 +851,8 @@ function draw(){
     curveVertex(points[i].x, points[i].y);
   }
   // Close the shape by connecting the last point to the first
-  curveVertex(points[0].x, points[0].y);
-  curveVertex(points[1].x, points[1].y);
+ curveVertex(points[0].x, points[0].y);
+ curveVertex(points[1].x, points[1].y);
   }
   else {
      beginShape();
@@ -840,8 +879,8 @@ function draw(){
     }
     
   }
-  if (fillMode === "outline") {
-    if (showDots == true){
+  if (fillMode === "outline" || fillMode === "filled") {
+    if (hideDots === false){
     // Draw dots at each point
     strokeWeight(1);
     fill(fillColor);
@@ -953,7 +992,4 @@ function toggleMutation() {
 }
 function toggleShapeType() {
 spiky = !spiky;
-}
-function toggleShapeType() {
-  spiky = !spiky;
 }
