@@ -1,7 +1,7 @@
 // Blob
 let points = []; // Array to store blob vertex points
-let amount = 1500; // Number of blob points
-let blobSize = 300; // Size of the blob
+let amount = 1000; // Number of blob points
+let blobSize = 500; // Size of the blob
 let hideDots = true; // Variable to manage dot visibility
 let spiky = false;
 let bpm = 30;  // Set your BPM here
@@ -14,7 +14,7 @@ let dotColor = 'white';
 let bgColor; // Background color
 let fillColor; // Fill color
 let fillMode; // Fill mode ("filled", "outline", "worm")
-let strokeW; // Stroke weight (outline thickness)
+let strokeW = 1; // Stroke weight (outline thickness)
 let cursorStrokeW; // Stroke weight for the cursor
 let cursorColor = 'red';
 let edgeColor = 'black';
@@ -36,32 +36,27 @@ let mutationSpeed = 20;
 let noiseScale = 0.025;
 let amplitude = 1;
 let frequency = 10;
-let reactionDistance = 1.5;
+let reactionDistance = 2;
 
 // UI
-let labelInfo;
+
 let uiContainer;
 let canvasContainer;
 let showUI = true;
 let sliders = {};
 let buttons = {};
-let textOpacity = 255; // Text opacity
-let guiTextColor = '#bababa';
-let uiColor = '#666666';
-let sliderPos = 50;
-let sliderDist = 45;
-let sliderLabelDist = 20;
-let buttonPos = 450;
-let uiDist = 40;
+let elementY = 30;
+let sliderLabelDist = 15;
+let sliderDist = 40;
+let buttonDist = 35;
 let currentWidth, currentHeight;
 
 
 // Video
-//let cwidth = currentWidth;
-//let cheight = currentHeight;
+
 let button;
 let encoder;
-const frate = 60 // frame rate;
+const frate = 30 // frame rate;
 const numFrames = 300 // num of frames to record;
 let recording = false;
 let recordedFrames = 0;
@@ -81,8 +76,8 @@ function preload() {
         // Maximum width for downscaling
 
         // Get the dimensions of the canvas
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
+        var canvasWidth = canvas.width;
+        var canvasHeight = canvas.height;
 
       
         encoder.width = canvasWidth;
@@ -100,268 +95,331 @@ function createUI() {
            
   let uiContainer = select('#ui-container');
      
-  let label1 = createP ('UGLYPH v0.74');
-  label1.position(10, -5);
+  let label1 = createP ('UGLYPH v0.8');
+  label1.position(10, 0);
   label1.class('text');
   label1.parent(uiContainer);
     
-  let labelInfo = createP ('Mutational Design Tool');
-  labelInfo.position(10, 15);
-  labelInfo.class('text');
-  labelInfo.parent(uiContainer);
+  // let labelInfo = createP ('Mutational Design Tool');
+  // labelInfo.position(10, 15);
+  // labelInfo.class('text');
+  // labelInfo.parent(uiContainer);
   
   let section1 = createP ('GENERATION');
-  section1.position(10, sliderPos);
+  section1.position(10, elementY);
   section1.class('sectionName');
-  sliderPos += 25;
+  elementY += 20;
   section1.parent(uiContainer);  
 
-  let label4 = createP ('Vertices');
-  label4.position(10, sliderPos);
-  label4.class('text');
-  label4.parent(uiContainer);
+// Create a label with left and right aligned text using flexbox
+let label4 = createP(`
+  <span class="label-left">Vertices</span>
+  <span class="label-right">${amount}</span>
+`);
+label4.position(10, elementY);
+label4.class('text label-container');
+label4.parent(uiContainer);
 
-  sliders.amount = createSlider(100, 2000, amount);
-  sliders.amount.position(10, sliderPos + sliderLabelDist);
-  sliders.amount.class('slider');
-  sliders.amount.input(() => { amount = sliders.amount.value();
+// Create the amount slider
+sliders.amount = createSlider(100, 2000, amount);
+sliders.amount.position(10, elementY + sliderLabelDist);
+sliders.amount.class('slider');
+sliders.amount.input(() => {
+  amount = sliders.amount.value();
+  label4.html(`
+    <span class="label-left">Vertices</span>
+    <span class="label-right">${amount}</span>
+  `); // Update the displayed amount
   generateShape();                       
-  });
-  sliderPos += sliderDist;
-  sliders.amount.parent(uiContainer);
-    
-  let label7 = createP ('Size');
-  label7.position(10, sliderPos);
-  label7.class('text');
-  label7.parent(uiContainer);
+});
 
-  sliders.blobSize = createSlider(canvas.width/4, canvas.width/2, blobSize);
-  sliders.blobSize.position(10, sliderPos + sliderLabelDist);
-  sliders.blobSize.class('slider');
-  sliders.blobSize.input(() => {
-  blobSize = sliders.blobSize.value();
-  generateShape();
-  });
-  sliderPos += sliderDist;
-  sliders.blobSize.parent(uiContainer);
+elementY += sliderDist;
+sliders.amount.parent(uiContainer);
+    
+let label7 = createP(`
+  <span class="label-left">Size</span>
+  <span class="label-right">${blobSize}</span>
+`);
+label7.position(10, elementY);
+label7.class('text label-container');
+label7.parent(uiContainer);
+
+// Create the size slider
+sliders.size = createSlider(0, 1000, blobSize);
+sliders.size.position(10, elementY + sliderLabelDist);
+sliders.size.class('slider');
+sliders.size.input(() => {
+  blobSize = sliders.size.value();
+  label7.html(`
+    <span class="label-left">Size</span>
+    <span class="label-right">${blobSize}</span>
+  `); // Update the displayed amount
+  generateShape();                       
+});
+
+elementY += sliderDist;
+sliders.amount.parent(uiContainer);
   
-  sliderPos += 10;  
+  elementY += 10;  
   let section2 = createP ('MUTATION');
-  section2.position(10, sliderPos);
+  section2.position(10, elementY);
   section2.class('sectionName');
-  sliderPos += 25;
+  elementY += 20;
   section2.parent(uiContainer);
     
-  let label6 = createP ('Speed');
-  label6.position(10, sliderPos);
-  label6.class('text');
-  label6.parent(uiContainer);
-
-  sliders.mutationSpeed = createSlider(10, 50, mutationSpeed);
-  sliders.mutationSpeed.position(10, sliderPos + sliderLabelDist);
-  sliders.mutationSpeed.class('slider');
-  sliders.mutationSpeed.input(() => {
-    mutationSpeed = sliders.mutationSpeed.value();
-    generateShape();
-  });
-  sliderPos += sliderDist;
-  sliders.mutationSpeed.parent(uiContainer);
-    
-      let label9 = createP ('Tension');
-  label9.position(10, sliderPos);
-  label9.class('text');
-  label9.parent(uiContainer);
-
-  sliders.reactionDistance = createSlider(0.1, 20, reactionDistance);
-  sliders.reactionDistance.position(10, sliderPos + sliderLabelDist);
-  sliders.reactionDistance.class('slider');
-  sliders.reactionDistance.input(() => {
-    reactionDistance = sliders.reactionDistance.value();
-
-  });
-  sliderPos += sliderDist;
-  sliders.reactionDistance.parent(uiContainer);
-      sliderPos += 10; 
-  
     
     buttons.mutation = createButton(`
-    <span class="left-align">☣</span>
-    <span class="center-align">Start / Stop</span>
+    <span class="left-align">■</span>
+    <span class="center-align">Stop</span>
     <span class="right-align">M</span>`);
-  buttons.mutation.position(10,sliderPos);
+  buttons.mutation.position(10,elementY);
   buttons.mutation.class('button');
   buttons.mutation.mousePressed(toggleMutation);
-  sliderPos += uiDist;
-  buttons.mutation.parent(uiContainer);
-     buttons.mutation.html(`
-    <span class="left-align">☣</span>
-    <span class="center-align">${shouldMutate ? 'Stop' : 'Start'}</span>
-    <span class="right-align">M</span>`);
-    
-
+  elementY += buttonDist;
   
-  buttons.freeze = createButton(
-                                 `
+  buttons.freeze = createButton(`
     <span class="left-align">❄</span>
     <span class="center-align">Freeze</span>
-    <span class="right-align">Space</span>
-  `);
-  buttons.freeze.position(10,  sliderPos);
+    <span class="right-align">Space</span>`);
+  buttons.freeze.position(10,  elementY);
   buttons.freeze.class('button');
   buttons.freeze.mousePressed(toggleSmoothing);
-  sliderPos += uiDist;
+  elementY += buttonDist;
   buttons.freeze.parent(uiContainer);
-    
-       buttons.reset = createButton(`
+  buttons.reset = createButton(`
   <span class="left-align">↻</span>
   <span class="center-align">Reset</span>
   <span class="right-align">Esc</span>`);
-  buttons.reset.position(10,  sliderPos);
+  buttons.reset.position(10,  elementY);
   buttons.reset.class('button');
   buttons.reset.mousePressed(reloadWindow);
-  sliderPos += uiDist;
+  elementY += buttonDist;
   buttons.reset.parent(uiContainer);
-  
-
+  elementY += 10;
  
-  sliderPos += 10;  
-  let section3 = createP ('INTERACTION');
-  section3.position(10, sliderPos);
-  section3.class('sectionName');
-  sliderPos += 25;
-  section3.parent(uiContainer);
-    
-  buttons.brushMode = createButton(`
-    <span class="left-align">±</span>
-    <span class="center-align">Attract/Repulse</span>
-    <span class="right-align">A</span>`);
-  
-  buttons.brushMode.position(10, sliderPos);
-  buttons.brushMode.class('button');
-  buttons.brushMode.mousePressed(toggleAttractionRepulsion);
-  sliderPos += uiDist;
-  buttons.brushMode.parent(uiContainer);
-    
-    
-  let label2 = createP ('Cursor Radius');
-  label2.position(10, sliderPos);
-  label2.class('text');
-  label2.parent(uiContainer);
-  //label2.mouseOver(() => updateLabel('Adjust the slider to change value of X.'));
-  //label2.mouseOut(() => resetLabel());
-      
-  sliders.touchRadius = createSlider(10, 200, touchRadius);
-  sliders.touchRadius.position(10, sliderPos + sliderLabelDist);
-  sliders.touchRadius.class('slider');
-  sliders.touchRadius.input(() => touchRadius = sliders.touchRadius.value());
-  sliderPos += sliderDist;
-  sliders.touchRadius.parent(uiContainer);    
-  
-  
-  let label5 = createP ('Cursor Force');
-  label5.position(10, sliderPos);
-  label5.class('text');
-  label5.parent(uiContainer);
 
-  sliders.force = createSlider(20, 200, touchForce);
-  sliders.force.position(10, sliderPos + sliderLabelDist);
-  sliders.force.class('slider');
-  sliders.force.input(() => touchForce = sliders.force.value());
-  sliderPos += sliderDist;
-  sliders.force.parent(uiContainer);
-  
-    
-  
-  let label8 = createP ('Explosion Force');
-  label8.position(10, sliderPos);
-  label8.class('text');
-  label8.parent(uiContainer);
+  let label6 = createP(`
+  <span class="label-left">Speed</span>
+  <span class="label-right">${mutationSpeed}</span>
+`);
+label6.position(10, elementY);
+label6.class('text label-container');
+label6.parent(uiContainer);
 
-  sliders.explosionForce = createSlider(1, 400, explosionForce);
-  sliders.explosionForce.position(10, sliderPos + sliderLabelDist);
-  sliders.explosionForce.class('slider');
-  sliders.explosionForce.input(() => {
-    explosionForce = sliders.explosionForce.value();
+// Create the speed slider
+
+  sliders.mutationSpeed = createSlider(0, 50, mutationSpeed);
+  sliders.mutationSpeed.position(10, elementY + sliderLabelDist);
+  sliders.mutationSpeed.class('slider');
+  sliders.mutationSpeed.input(() => {
+    mutationSpeed = sliders.mutationSpeed.value();
+    
+  label6.html(`
+    <span class="label-left">Speed</span>
+    <span class="label-right">${mutationSpeed}</span>
+  `); // Update the displayed amount
+    generateShape();
   });
-  sliderPos += sliderDist;
-  sliders.blobSize.parent(uiContainer); 
+  elementY += sliderDist;
+  sliders.mutationSpeed.parent(uiContainer);
+    
+    
+let label9 = createP(`
+  <span class="label-left">Tension</span>
+  <span class="label-right">${reactionDistance}</span>
+`);
+label9.position(10, elementY);
+label9.class('text label-container');
+label9.parent(uiContainer);
 
-  sliderPos += 10;  
+sliders.reactionDistance = createSlider(0, 10, reactionDistance);
+sliders.reactionDistance.position(10, elementY + sliderLabelDist);
+sliders.reactionDistance.class('slider');
+
+// Update label and value when the slider is moved
+sliders.reactionDistance.input(() => {
+  reactionDistance = sliders.reactionDistance.value();
+
+  // Update the label with the new value of reactionDistance
+  label9.html(`
+    <span class="label-left">Tension</span>
+    <span class="label-right">${reactionDistance}</span>
+  `);
+
+});
+
+sliders.reactionDistance.parent(uiContainer);
+
+elementY += sliderDist;
+elementY += 10;
+ 
+  let section3 = createP ('INTERACTION');
+  section3.position(10, elementY);
+  section3.class('sectionName');
+  elementY += 20;
+  section3.parent(uiContainer);
+
+    
+  // Create Attract button
+buttons.attractButton = createButton(`
+ <span class="center-align">>•< Attract</span>`);
+buttons.attractButton.position(10, elementY);
+buttons.attractButton.class('mediumbutton');
+buttons.attractButton.mousePressed(() => setBrushMode('attract'));
+
+    
+// Create Repulse button
+buttons.repulseButton = createButton(`
+  
+  <span class="center-align"><•> Repulse</span>
+  `);
+buttons.repulseButton.position(110, elementY);
+buttons.repulseButton.class('mediumbutton');
+buttons.repulseButton.mousePressed(() => setBrushMode('repulse'));
+
+// Attach buttons to parent container
+buttons.attractButton.parent(uiContainer);
+buttons.repulseButton.parent(uiContainer);
+    // Adjust positioning for the Repulse button
+elementY += buttonDist; 
+
   buttons.explode = createButton(`
   <span class="left-align">✱</span>
   <span class="center-align">Explode</span>
   <span class="right-align">X</span>`);
   
-  buttons.explode.position(10, sliderPos);
+  buttons.explode.position(10, elementY);
   buttons.explode.class('button');
   buttons.explode.mousePressed(explode);
-  sliderPos += uiDist;
-  buttons.explode.parent(uiContainer);
- 
- 
+  buttons.explode.parent(uiContainer);  
+  elementY += buttonDist;
+  elementY += 10;
     
-  sliderPos += 10;  
-  let section4 = createP ('STYLE');
-  section4.position(10, sliderPos);
+  let label2 = createP(`
+  <span class="label-left">Cursor Radius</span>
+  <span class="label-right">${touchRadius}</span>
+`);
+label2.position(10, elementY);
+label2.class('text label-container');
+label2.parent(uiContainer);
+
+sliders.touchRadius = createSlider(10, 200, touchRadius);
+sliders.touchRadius.position(10, elementY + sliderLabelDist);
+sliders.touchRadius.class('slider');
+
+// Update label and value when the slider is moved
+sliders.touchRadius.input(() => {
+  touchRadius = sliders.touchRadius.value();
+
+  // Update the label with the new value of reactionDistance
+  label2.html(`
+    <span class="label-left">Cursor Radius</span>
+    <span class="label-right">${touchRadius}</span>
+  `);
+
+});
+
+sliders.touchRadius.parent(uiContainer);
+
+elementY += sliderDist;  
+    
+    let label5 = createP(`
+  <span class="label-left">Cursor Force</span>
+  <span class="label-right">${touchForce}</span>
+`);
+label5.position(10, elementY);
+label5.class('text label-container');
+label5.parent(uiContainer);
+
+sliders.touchForce = createSlider(20, 200, touchForce);
+sliders.touchForce.position(10, elementY + sliderLabelDist);
+sliders.touchForce.class('slider');
+
+// Update label and value when the slider is moved
+sliders.touchForce.input(() => {
+  touchForce = sliders.touchForce.value();
+
+  // Update the label with the new value of CursorForce
+  label5.html(`
+    <span class="label-left">Cursor Force</span>
+    <span class="label-right">${touchForce}</span>
+  `);
+
+});
+    
+  sliders.touchForce.parent(uiContainer);
+  
+  elementY += sliderDist; 
+  
+  let label8 = createP (`
+  <span class="label-left">Explosion Force</span>
+  <span class="label-right">${explosionForce}</span>
+`);
+  label8.position(10, elementY);
+  label8.class('text label-container');
+  label8.parent(uiContainer);
+
+  sliders.explosionForce = createSlider(1, 400, explosionForce);
+  sliders.explosionForce.position(10, elementY + sliderLabelDist);
+  sliders.explosionForce.class('slider');
+  sliders.explosionForce.input(() => {
+    explosionForce = sliders.explosionForce.value();
+     label8.html(`
+    <span class="label-left">Explosion Force</span>
+    <span class="label-right">${explosionForce}</span>
+  `);
+  });
+  elementY += sliderDist;
+  sliders.explosionForce.parent(uiContainer); 
+
+  elementY += 10;  
+  let section4 = createP ('APPEARANCE');
+  section4.position(10, elementY);
   section4.class('sectionName');
-  sliderPos += 25;
+
   section4.parent(uiContainer);  
+  elementY += 20;
     
     
     
 
     
 //     let label9 = createP ('BPM');
-//   label9.position(10, sliderPos);
+//   label9.position(10, elementY);
 //   label9.class('text');
 //   label9.parent(uiContainer);
 
 //   sliders.bpm = createSlider(10, 100, bpm);
-//   sliders.bpm.position(10, sliderPos + sliderLabelDist);
+//   sliders.bpm.position(10, elementY + sliderLabelDist);
 //   sliders.bpm.class('slider');
 //   sliders.bpm.input(() => {
 //     bpm = sliders.bpm.value();
 //   });
-//   sliderPos += sliderDist;
+//   elementY += sliderDist;
 //   sliders.blobSize.parent(uiContainer);  
     
     
-    
-  
-  let label3 = createP ('Outline Stroke');
-  label3.position(10, sliderPos);
-  label3.class('text');
-  label3.parent(uiContainer);    
-
-  sliders.strokeW = createSlider(1, 200, strokeW);
-  sliders.strokeW.position(10, sliderPos + sliderLabelDist);
-  sliders.strokeW.class('slider');
-  sliders.strokeW.input(() => strokeW = sliders.strokeW.value());
-  sliderPos += sliderDist;
-  sliders.strokeW.parent(uiContainer);
-  
-    
-      buttons.changeMode = createButton(`
+    buttons.switchStyle = createButton(`
     <span class="left-align">✧</span>
     <span class="center-align">Switch Style</span>
     <span class="right-align">F</span>`);
   
-  buttons.changeMode.position(10, sliderPos);
-  buttons.changeMode.class('button');
-  buttons.changeMode.mousePressed(toggleFillMode);
-  sliderPos += uiDist;
-  buttons.changeMode.parent(uiContainer);
+  buttons.switchStyle.position(10, elementY);
+  buttons.switchStyle.class('button');
+  buttons.switchStyle.mousePressed(toggleFillMode);
+  elementY += buttonDist;
+  buttons.switchStyle.parent(uiContainer);
  
     
-      buttons.spikes = createButton(`
+  buttons.spikes = createButton(`
     <span class="left-align">★</span>
     <span class="center-align">Show Spikes</span>
     <span class="right-align">B</span>`);
   
-  buttons.spikes.position(10, sliderPos);
+  buttons.spikes.position(10, elementY);
   buttons.spikes.class('button');
   buttons.spikes.mousePressed(toggleShapeType);
-  sliderPos += uiDist;
+  elementY += buttonDist;
   buttons.spikes.parent(uiContainer);
   
   buttons.recolor = createButton(`
@@ -369,71 +427,105 @@ function createUI() {
     <span class="center-align">Randomize Colors</span>
     <span class="right-align">R</span>`);
   
-  buttons.recolor.position(10, sliderPos);
+  buttons.recolor.position(10, elementY);
   buttons.recolor.class('button');
   buttons.recolor.mousePressed(recolor);
-  sliderPos += uiDist;
+  elementY += buttonDist;
   buttons.recolor.parent(uiContainer);
 
   buttons.invertColors = createButton(`
     <span class="left-align">☯</span>
-    <span class="center-align">Black / White</span>
+    <span class="center-align">Black & White</span>
     <span class="right-align">I</span>`);
   
-  buttons.invertColors.position(10, sliderPos);
+  buttons.invertColors.position(10, elementY);
   buttons.invertColors.class('button');
   buttons.invertColors.mousePressed(invertColors);
-  sliderPos += uiDist;
+  elementY += buttonDist;
   buttons.invertColors.parent(uiContainer);
-    
   
+     
+  
+  let label3 = createP (`
+  <span class="label-left">Outline Stroke</span>
+  <span class="label-right">${strokeW}</span>
+`);
+  elementY += 10;
+  label3.position(10, elementY);
+  label3.class('text label-container');
+  label3.parent(uiContainer);    
 
-  
-  
-  
-    
-  sliderPos += 10;  
+  sliders.strokeW = createSlider(1, 200, strokeW);
+  sliders.strokeW.position(10, elementY + sliderLabelDist);
+  sliders.strokeW.class('slider');
+  sliders.strokeW.input(() => {
+  strokeW = sliders.strokeW.value();
+  label3.html(`
+    <span class="label-left">Outline Stroke</span>
+    <span class="label-right">${strokeW}</span>
+  `);
+  elementY += sliderDist;
+  sliders.strokeW.parent(uiContainer);
+  });
+  elementY += buttonDist;
+
+  elementY += 20;  
   let section5 = createP ('EXPORT');
-  section5.position(10, sliderPos);
+  section5.position(10, elementY);
   section5.class('sectionName');
-  sliderPos += 25;
+  elementY += 20;
   section5.parent(uiContainer); 
   
   buttons.sPNG = createButton(`
-    <span class="center-align">PNG</span>
+    <span class="center-align">.png</span>
     `);
   
-  buttons.sPNG.position(10,  sliderPos);
+  buttons.sPNG.position(10, elementY);
   buttons.sPNG.class('smallbutton');
   buttons.sPNG.mousePressed(savePNG);
   buttons.sPNG.parent(uiContainer);
   
   buttons.sSVG = createButton(`
-  <span class="center-align">SVG</span>
+  <span class="center-align">.svg</span>
   `);
-  buttons.sSVG.position(60,  sliderPos);
+  buttons.sSVG.position(61,  elementY);
   buttons.sSVG.class('smallbutton');
   buttons.sSVG.mousePressed(copyAndSaveSVG);
   buttons.sSVG.parent(uiContainer);
   
   buttons.sGIF = createButton(`
-    <span class="center-align">GIF</span>
+    <span class="center-align">.gif</span>
   `);
-  buttons.sGIF.position(110,  sliderPos);
+  buttons.sGIF.position(112,  elementY);
   buttons.sGIF.class('smallbutton');
   buttons.sGIF.mousePressed(recordGIF);
   buttons.sGIF.parent(uiContainer);
   
   buttons.sMP4 = createButton(`
-  <span class="center-align">MP4</span>
+  <span class="center-align">.mp4</span>
 `);
-  buttons.sMP4.position(160,  sliderPos);
+  buttons.sMP4.position(163,  elementY);
   buttons.sMP4.class('smallbutton');
   buttons.sMP4.mousePressed(() => recording = true)
   buttons.sMP4.parent(uiContainer);
+elementY += buttonDist;
+
+elementY += 20;  
+let section6 = createP ('IMPORT');
+section6.position(10, elementY);
+section6.class('sectionName');
+section6.parent(uiContainer); 
+elementY += 20;
+
+let importText = createP('Drag .svg UGLYPH to the canvas');
+importText.position(10, elementY);
+importText.class('text');
+importText.parent(uiContainer);
+
+
 }
-  
-  
+
+
   
 //   let labelCredits = createP ('<a href = "https://www.instagram.com/uglyph.xyz" target="blank">@uglyph.xyz</a>');
 //   labelCredits.position(10, buttonPos+50);
@@ -444,28 +536,36 @@ function createUI() {
 //   labelCredits2.position(10, buttonPos+65);
 //   labelCredits2.class('text');
 //   labelCredits2.parent(uiContainer);
-  
+
+
   
 }
 function setup() {
+
     let canvasContainer = select('#canvas-container');
     let canvas = createCanvas(windowWidth - 220, windowHeight);  // Adjust the width to exclude the UI column
     canvas.parent(canvasContainer);
-   
+    canvas.drop(handleFileDrop); // Allow SVG file to be dropped on canvas
 
 
     frameRate(60);
     framesPerBeat = (60 / bpm) * frameRate();  // Calculate frames per beat
     currentWidth = windowWidth;
     currentHeight = windowHeight;
-    strokeW = 3;
     fillMode = "outline"; // Default fill mode
     recolor();
     showUI = true;
     createUI();
     generateShape();
     invertColors();
+  
+
+// Initial call to set the right button states based on the default mode
+  if (buttons.attractButton && buttons.repulseButton) {
+    updateButtonStates(); // Call this only after buttons are created
+  }
 }
+
 function generateShape() {
   points = [];
   velocities = [];
@@ -499,7 +599,7 @@ function adjustStrokeWidth(amount) {
 function windowResized() {
   currentWidth = windowWidth;
   currentHeight = windowHeight;
-  resizeCanvas(currentWidth, currentHeight);
+  resizeCanvas(currentWidth-220, currentHeight);
 }
 function keyPressed() {
   switch (keyCode) {
@@ -730,7 +830,6 @@ function recordVideo() {
     recordedFrames++;
 
 }
-
 function saveBlob(blob, fileName) {
   let link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -830,18 +929,29 @@ function draw(){
   if (smoothingEnabled) {
    mutation();
     // Blob smoothing with vibration using Perlin noise
-    for (let i = 0; i < points.length; i++) {
-      let prev = points[(i - 1 + points.length) % points.length];
-      let curr = points[i];
-      let next = points[(i + 1) % points.length];
+//     for (let i = 0; i < points.length; i++) {
+//       let prev = points[(i - 1 + points.length) % points.length];
+//       let curr = points[i];
+//       let next = points[(i + 1) % points.length];
 
-      // Smoothing calculation with added vibration using Perlin noise
-      let smoothedX = (prev.x + smoothing * curr.x + next.x) / 3 + map(noise(i * 0.1, frameCount * 0.01), 0, 1, -0.1 * amplitude, 0.1 * amplitude);
-      let smoothedY = (prev.y + smoothing * curr.y + next.y) / 3 + map(noise(i * 0.1, frameCount * 0.01), 0, 1, -0.1 * amplitude, 0.1 * amplitude);
+//       // Smoothing calculation with added vibration using Perlin noise
+//       let smoothedX = (prev.x + smoothing * curr.x + next.x) / 3 + map(noise(i * 0.1, frameCount * 0.01), 0, 1, -0.1 * amplitude, 0.1 * amplitude);
+//       let smoothedY = (prev.y + smoothing * curr.y + next.y) / 3 + map(noise(i * 0.1, frameCount * 0.01), 0, 1, -0.1 * amplitude, 0.1 * amplitude);
 
-      curr.x = smoothedX;
-      curr.y = smoothedY;
+      
+      
+          for (let i = 0; i < points.length; i++) {
+    let prev = points[(i - 1 + points.length) % points.length];
+    let curr = points[i];
+    let next = points[(i + 1) % points.length];
+
+    let smoothedX = (prev.x + smoothing * curr.x + next.x) / (2 + 1 * smoothing);
+    let smoothedY = (prev.y + smoothing * curr.y + next.y) / (2 + 1 * smoothing);
+
+    curr.x = smoothedX;
+    curr.y = smoothedY;
     }
+    
   }
 
   // Blob outline smoothing
@@ -896,7 +1006,7 @@ function draw(){
     
   }
 
-  if (mouseIsPressed === false) {
+  if (mouseIsPressed === true) {
     // Vertex attraction or repulsion
     for (let i = 0; i < points.length; i++) {
       let d = dist(mouseX - width / 2, mouseY - height / 2, points[i].x, points[i].y);
@@ -911,17 +1021,17 @@ function draw(){
   
 
  
-//   fill(255, 255, 255, 255);
-//   noStroke();
-//   circle(mouseX - width / 2, mouseY - height / 2, 5); // Inner dot
-//   fill(100, 100, 100, 75);
-//   circle(mouseX - width / 2, mouseY - height / 2,touchRadius * 2); // Outer cursor
+  fill(255, 255, 255, 255);
+  noStroke();
+  //circle(mouseX - width / 2, mouseY - height / 2, 5); // Inner dot
+  fill(100, 100, 100, 75);
+  circle(mouseX - width / 2, mouseY - height / 2,touchRadius * 2); // Outer cursor
 
 
-//   if (mouseIsPressed === true) {
-//     fill(guiTextColor);
-//     circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6); // Active cursor
-//   }
+  if (mouseIsPressed === true) {
+    fill(guiTextColor);
+    circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6); // Active cursor
+   }
   if (bgColor === 'white') {
     document.body.classList.add('light-theme');
     document.body.classList.remove('dark-theme');
@@ -992,4 +1102,133 @@ function toggleMutation() {
 }
 function toggleShapeType() {
 spiky = !spiky;
+}
+function setBrushMode(mode) {
+  currentMode = mode;
+  updateButtonStates();
+}
+function updateButtonStates() {
+  if (currentMode === 'attract') {
+    buttons.attractButton.addClass('active');   // Add 'active' class to Attract button
+    buttons.repulseButton.removeClass('active'); // Remove 'active' class from Repulse button
+  } else if (currentMode === 'repulse') {
+    buttons.repulseButton.addClass('active');   // Add 'active' class to Repulse button
+    buttons.attractButton.removeClass('active'); // Remove 'active' class from Attract button
+  }
+}
+
+function handleFileDrop(file) {
+  if (file.type === 'image' && file.subtype === 'svg+xml') {
+      let svgData = file.data;
+
+      // Check if the data is base64 encoded
+      if (svgData.startsWith('data:image/svg+xml;base64,')) {
+          // Extract the base64 part and decode it
+          const base64Data = svgData.split(',')[1];
+          svgData = atob(base64Data); // Decode base64
+      }
+
+      // Now svgData should be a valid SVG string
+      svgData = decodeHTMLEntities(svgData).trim(); // Decode any HTML entities
+
+      let parser = new DOMParser();
+      let svgDoc = parser.parseFromString(svgData, 'image/svg+xml');
+
+      // Check for parsing errors
+      if (svgDoc.getElementsByTagName('parsererror').length > 0) {
+          const parserError = svgDoc.getElementsByTagName('parsererror')[0];
+          console.error('Error parsing SVG:', parserError.textContent);
+          console.error('SVG Document:', svgData); // Log the document for further inspection
+          return;
+      }
+
+      let pathElement = svgDoc.querySelector('path'); // Get the first <path> element
+      console.log('Parsed SVG Document:', svgDoc);
+
+      if (pathElement) {
+          let pathData = pathElement.getAttribute('d');
+          console.log('Path data:', pathData);
+          let svgPoints = parseSVGPath(pathData);
+          console.log('Extracted points:', svgPoints);
+
+          if (svgPoints.length > 0) {
+              // Calculate dimensions of the SVG
+              const svgWidth = parseFloat(svgDoc.documentElement.getAttribute('width')) || 100; // Fallback width
+              const svgHeight = parseFloat(svgDoc.documentElement.getAttribute('height')) || 100; // Fallback height
+
+              // Get canvas dimensions
+              const canvasWidth = width; // p5 canvas width
+              const canvasHeight = height; // p5 canvas height
+
+              // Calculate scaling factor
+              const scale = Math.min(canvasWidth / svgWidth, canvasHeight / svgHeight);
+
+              // Calculate offsets to center the SVG
+              const xOffset = (canvasWidth - (svgWidth * scale)) / 2 - canvasWidth/2;
+              const yOffset = (canvasHeight - (svgHeight * scale)) / 2 - canvasHeight/2;
+
+              // Transform points to be centered and scaled
+              points = svgPoints.map(point => ({
+                  x: xOffset + point.x * scale,
+                  y: yOffset + point.y * scale
+              }));
+
+              // Create velocities
+              velocities = points.map(() => ({
+                  vx: random(-mutationSpeed, mutationSpeed),
+                  vy: random(-mutationSpeed, mutationSpeed)
+              }));
+
+              console.log('Transformed SVG points and velocities set');
+          }
+      } else {
+          console.log('No path element found in the SVG');
+      }
+  }
+}
+
+
+// Function to decode HTML-encoded strings
+function decodeHTMLEntities(str) {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = str; // Using innerHTML will decode the entities
+  return textarea.value;
+}
+
+// Convert SVG path data ("d" attribute) into an array of points
+function parseSVGPath(pathData) {
+  let commands = pathData.match(/[a-df-z][^a-df-z]*/ig);
+  let pointsArray = [];
+  let currentPoint = { x: 0, y: 0 };
+
+  for (let command of commands) {
+      let type = command[0];
+      let values = command.slice(1).trim().split(/[\s,]+/).map(Number);
+
+      switch (type) {
+          case 'M':  // Move to
+          case 'L':  // Line to
+              currentPoint = { x: values[0], y: values[1] };
+              pointsArray.push(currentPoint);
+              break;
+          case 'C':  // Bezier curve (Cubic)
+              // For simplicity, we use the endpoint of the curve
+              currentPoint = { x: values[4], y: values[5] };
+              pointsArray.push(currentPoint);
+              break;
+          case 'Z':  // Close path (optional)
+              if (pointsArray.length > 0) {
+                  // Add the first point again to close the shape
+                  pointsArray.push(pointsArray[0]);
+              }
+              break;
+      }
+
+      // Trim to first 2000 points
+      if (pointsArray.length >= 3000) {
+          break;
+      }
+  }
+
+  return pointsArray;
 }
