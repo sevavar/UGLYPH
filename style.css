@@ -4,6 +4,7 @@ html, body {
     height: 100%;
     display: flex;
     font: 10px monospace, monospace;
+    overflow:hidden
 }
 
 body {
@@ -34,7 +35,7 @@ body {
     justify-content: center;
     background-color: black;
     height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .button-container {
