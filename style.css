@@ -2,13 +2,13 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    display: flex;
     font: 10px monospace, monospace;
     overflow:hidden
     
 }
 
 body {
+    display: flex;
     flex-direction: row;
 }
 
@@ -44,6 +44,7 @@ canvas {
 }
 
 #canvas-container {
+    
     flex-shrink: 1;
     flex-grow: 1;
     display: flex;

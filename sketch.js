@@ -479,13 +479,18 @@ function createUI() {
 function setup() {
 
     let canvasContainer = select('#canvas-container');
-    let canvas = createCanvas(windowWidth - 220, windowHeight);  // Adjust the width to exclude the UI column
+    let availableWidth = windowWidth - select('#ui-container').width;
+    let availableHeight = windowHeight; // Full height of the window
+
+    // Create canvas with dynamic size
+    let canvas = createCanvas(availableWidth, availableHeight);  // Adjust the width to exclude the UI column
+    
     canvas.parent(canvasContainer);
     canvas.drop(handleFileDrop); // Allow SVG file to be dropped on canvas
     frameRate(60);
     framesPerBeat = (60 / bpm) * frameRate();  // Calculate frames per beat
-    currentWidth = windowWidth;
-    currentHeight = windowHeight;
+    currentWidth = availableWidth;
+    currentHeight = availableHeight;
     fillMode = "outline"; // Default fill mode
     showUI = true;
     createUI();
@@ -509,7 +514,7 @@ function generateShape() {
     let y = windowHeight / 2;
     let angle = map(i, 0, amount, 0, TWO_PI);
     let radius = (blobSize) * noise(noiseScale * i);
-    x = windowWidth / 2 + radius * cos(angle) - 0.5 *(currentWidth);
+    x = currentWidth / 2 + radius * cos(angle) - 0.5 *(currentWidth);
     y = windowHeight / 2 + radius * sin(angle) - 0.5 * height;
     points.push({ x: x, y: y });
     velocities.push({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) });
@@ -532,9 +537,10 @@ function adjustStrokeWidth(amount) {
   }
 }
 function windowResized() {
-  currentWidth = windowWidth;
-  currentHeight = windowHeight;
-  resizeCanvas(currentWidth, currentHeight);
+   // Resize canvas when window is resized
+    let availableWidth = windowWidth - select('#ui-container').width;
+    let availableHeight = windowHeight;
+    resizeCanvas(availableWidth, availableHeight);
 
   // Mark that a resize has happened
   isResized = true;
