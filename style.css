@@ -35,7 +35,7 @@ canvas {
     color: white;
     padding: 10px;
     padding-top: 0px;
-    padding-bottom: 0px;
+    padding-bottom: 10px;
     overflow-y: scroll;
     overflow-x: hidden;
     height: 100vh;
@@ -162,9 +162,10 @@ a {
 
 .credits {
     color:#ff0000;
-    margin:0px;
-    padding: 0px;
+    
     font:20px monospace;
+    margin-top: auto; /* Push the <p> to the bottom */
+    margin-bottom: 0px; /* Dynamic distance from the bottom */
 }
 
 

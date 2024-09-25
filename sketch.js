@@ -117,8 +117,11 @@ function createUI() {
     let uiContainer = select('#ui-container');
 
     // Label 1
-    let label1 = createP('UGLYPH v0.8');
-    label1.class('text');
+    let label1 = createP(`
+      <span class="label-left" >UGLYPH v0.8</span>
+     <span class="label-right" style="color: red;"><a href="http://www.instagram.com/sevavar" target="_blank">⬥</a></span>
+    `);
+    label1.class('label-container');
     label1.parent(uiContainer);
 
     // Section 1: GENERATION
@@ -470,10 +473,6 @@ function createUI() {
     let importText = createP('Drag .svg UGLYPH file to canvas');
     importText.class('text');
     importText.parent(uiContainer);
-
-    let creditsText = createP('<a href="http://www.instagram.com/sevavar" target="_blank">⬥</a>')
-    creditsText.class('credits')
-    creditsText.parent(uiContainer);
   }
 }
 
