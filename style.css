@@ -35,6 +35,7 @@ canvas {
     color: white;
     padding: 10px;
     padding-top: 0px;
+    padding-bottom: 0px;
     overflow-y: scroll;
     overflow-x: hidden;
     height: 100vh;
@@ -90,7 +91,8 @@ canvas {
 
 
 a {
-    color: #fff;
+    color: #ff0000;
+    text-decoration: none;
 }
 
 
@@ -127,8 +129,8 @@ a {
 }
 
 .button:active, .smallbutton:active {
-    background-color: #000;
-    color: #fff;
+    background-color: #fff;
+    color: #000;
 
     
 }
@@ -137,7 +139,7 @@ a {
     background-color: #ff0000;
 }
 
-.mediumbutton.active {
+.button:active, .mediumbutton.active {
     background-color: #fff;
     color: black;
     
@@ -160,6 +162,9 @@ a {
 
 .credits {
     color:#ff0000;
+    margin:0px;
+    padding: 0px;
+    font:20px monospace;
 }
 
 
@@ -225,7 +230,7 @@ input[type=range]::-ms-thumb {
 }
 
 #ui-container::-webkit-scrollbar-thumb {
-    background-color: #000; /* Scrollbar thumb color */
+    background-color: #aaa; /* Scrollbar thumb color */
     border-radius: 0px; /* Rounded corners for the scrollbar thumb */
     border: 0px solid #222; /* Padding around the thumb */
 }

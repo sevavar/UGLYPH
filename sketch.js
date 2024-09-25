@@ -117,7 +117,7 @@ function createUI() {
     let uiContainer = select('#ui-container');
 
     // Label 1
-    let label1 = createP('UGLYPH™ v0.8');
+    let label1 = createP('UGLYPH v0.8');
     label1.class('text');
     label1.parent(uiContainer);
 
@@ -185,8 +185,8 @@ function createUI() {
 
     // Freeze Button
     buttons.freeze = createButton(`
-      <span class="left-align">❄</span>
-      <span class="center-align">Freeze</span>
+      <span class="left-align">⏸</span>
+      <span class="center-align">Pause</span>
       <span class="right-align">Space</span>
     `);
     buttons.freeze.class('button');
@@ -284,7 +284,7 @@ function createUI() {
 
 
       let label2 = createP(`
-        <span class="label-left">Cursor Radius</span>
+        <span class="label-left">Click Radius</span>
         <span class="label-right">${touchRadius}</span>
       `);
       label2.class('text label-container');
@@ -299,7 +299,7 @@ function createUI() {
       
         // Update the label with the new value of reactionDistance
         label2.html(`
-          <span class="label-left">Cursor Radius</span>
+          <span class="label-left">Click Radius</span>
           <span class="label-right">${touchRadius}</span>
         `);
       
@@ -310,7 +310,7 @@ function createUI() {
       elementY += sliderDist;  
           
           let label5 = createP(`
-        <span class="label-left">Cursor Force</span>
+        <span class="label-left">Click Force</span>
         <span class="label-right">${touchForce}</span>
       `);
       label5.class('text label-container');
@@ -325,7 +325,7 @@ function createUI() {
       
         // Update the label with the new value of CursorForce
         label5.html(`
-          <span class="label-left">Cursor Force</span>
+          <span class="label-left">Click Force</span>
           <span class="label-right">${touchForce}</span>
         `);
       
@@ -400,7 +400,7 @@ function createUI() {
     buttons.invertColors.parent(uiContainer);
 
     let label3 = createP (`
-      <span class="label-left">Outline Stroke</span>
+      <span class="label-left">Thickness</span>
       <span class="label-right">${strokeW}</span>
     `);
       label3.class('label-container');
@@ -411,7 +411,7 @@ function createUI() {
       sliders.strokeW.input(() => {
       strokeW = sliders.strokeW.value();
       label3.html(`
-        <span class="label-left">Outline Stroke</span>
+        <span class="label-left">Thickness</span>
         <span class="label-right">${strokeW}</span>
       `); });
       sliders.strokeW.parent(uiContainer);
@@ -467,11 +467,11 @@ function createUI() {
     section6.parent(uiContainer);
 
     // Import Text
-    let importText = createP('Drag .svg UGLYPH to the canvas');
+    let importText = createP('Drag .svg UGLYPH file to canvas');
     importText.class('text');
     importText.parent(uiContainer);
 
-    let creditsText = createP('◆')
+    let creditsText = createP('<a href="http://www.instagram.com/sevavar" target="_blank">⬥</a>')
     creditsText.class('credits')
     creditsText.parent(uiContainer);
   }
@@ -804,20 +804,21 @@ function draw(){
   
   if (smoothingEnabled === true) {
     buttons.freeze.html(`
-    <span class="left-align">❄</span>
-    <span class="center-align">Freeze</span>
+    <span class="left-align">⏸</span>
+    <span class="center-align">Pause</span>
     <span class="right-align">Space</span>
       
       `);
     
   }
   else {
-    
     buttons.freeze.html(` 
-    <span class="left-align">❄</span>
-    <span class="center-align">Unfreeze</span>
+    <span class="left-align">⏸</span>
+    <span class="center-align">Paused</span>
     <span class="right-align">Space</span>
       `);
+      
+      
   }
   
   
@@ -1081,6 +1082,7 @@ function updateButtonStates() {
     buttons.repulseButton.addClass('active');   // Add 'active' class to Repulse button
     buttons.attractButton.removeClass('active'); // Remove 'active' class from Attract button
   }
+
 }
 
 function handleFileDrop(file) {
