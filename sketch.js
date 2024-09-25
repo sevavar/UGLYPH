@@ -1,9 +1,9 @@
 // Blob
 let points = []; // Array to store blob vertex points
 let amount = 1000; // Number of blob points
-let blobSize = 500; // Size of the blob
-let hideDots = true; // Variable to manage dot visibility
-let spiky = false;
+let blobSize = 250; // Size of the blob
+let hideDots = false; // Variable to manage dot visibility
+let spiky = true;
 let bpm = 30;  // Set your BPM here
 let framesPerBeat;
 
@@ -11,19 +11,19 @@ let framesPerBeat;
 // Blob Style
 let dotSize = 1;
 let dotColor = 'white';
-let bgColor; // Background color
-let fillColor; // Fill color
+let bgColor;
+let fillColor;
 let fillMode; // Fill mode ("filled", "outline", "worm")
-let strokeW = 1; // Stroke weight (outline thickness)
-let cursorStrokeW; // Stroke weight for the cursor
+let strokeW = 2;
+let cursorStrokeW;
 let cursorColor = 'red';
 let edgeColor = 'black';
 
 // Modifier
-let currentMode = "attract"; // Current mode for brush interaction ("attract" or "repulse")
-let touchRadius = 100; // Size of the tool
-let touchForce = 10; // Force of interaction
-let smoothing = 1; // Smoothing factor for blob
+let currentMode = "attract";
+let touchRadius = 100;
+let touchForce = 10;
+let smoothing = 1;
 let explosionForce = 400;
 
 
@@ -54,6 +54,7 @@ let currentWidth, currentHeight;
 
 // Video
 
+let isResized = false;
 let button;
 let encoder;
 const frate = 30 // frame rate;
@@ -68,25 +69,46 @@ let frameCounter = 0;
 //  GIF
 let gifDuration = 100;
 
-function preload() {
-    HME.createH264MP4Encoder().then(enc => {
-        encoder = enc;
-        encoder.outputFilename = 'uglyph';
+// function preload() {
+//     HME.createH264MP4Encoder().then(enc => {
+//         encoder = enc;
+//         encoder.outputFilename = 'uglyph';
 
-        // Maximum width for downscaling
+//         // Maximum width for downscaling
 
-        // Get the dimensions of the canvas
-        var canvasWidth = canvas.width;
-        var canvasHeight = canvas.height;
+//         // Get the dimensions of the canvas
+//         var canvasWidth = canvas.width;
+//         var canvasHeight = canvas.height;
 
       
-        encoder.width = canvasWidth;
-        encoder.height = canvasHeight;
-        encoder.frameRate = frate;
-        encoder.kbps = 80000; // video quality
-        encoder.groupOfPictures = 10; // lower if you have fast actions.
-        encoder.initialize();
-    });
+//         encoder.width = canvasWidth;
+//         encoder.height = canvasHeight;
+//         encoder.frameRate = frate;
+//         encoder.kbps = 80000; // video quality
+//         encoder.groupOfPictures = 10; // lower if you have fast actions.
+//         encoder.initialize();
+//     });
+// }
+
+function initEncoder() {
+  HME.createH264MP4Encoder().then(enc => {
+      encoder = enc;
+      encoder.outputFilename = 'uglyph';
+      encoder.width = canvas.width;
+      encoder.height = canvas.height;
+      encoder.frameRate = 30;
+      encoder.kbps = 80000; // Video quality
+      encoder.groupOfPictures = 10; // Lower for fast actions
+      encoder.initialize();
+  });
+}
+
+
+function resetEncoder() {
+  if (encoder) {
+      encoder.delete(); // Properly delete the existing encoder before re-initializing
+  }
+  initEncoder();
 }
 
 
@@ -95,7 +117,7 @@ function createUI() {
     let uiContainer = select('#ui-container');
 
     // Label 1
-    let label1 = createP('UGLYPH v0.8');
+    let label1 = createP('UGLYPH™ v0.8');
     label1.class('text');
     label1.parent(uiContainer);
 
@@ -340,21 +362,21 @@ function createUI() {
     // Switch Style Button
     buttons.switchStyle = createButton(`
       <span class="left-align">✧</span>
-      <span class="center-align">Switch Style</span>
+      <span class="center-align">Fill Style</span>
       <span class="right-align">F</span>
     `);
     buttons.switchStyle.class('button');
     buttons.switchStyle.mousePressed(toggleFillMode);
     buttons.switchStyle.parent(uiContainer);
 
-    // Show Spikes Button
+    // Show Vertices Button
     buttons.spikes = createButton(`
-      <span class="left-align">★</span>
-      <span class="center-align">Show Spikes</span>
-      <span class="right-align">B</span>
+      <span class="left-align">⁙</span>
+      <span class="center-align">Hide Vertices</span>
+      <span class="right-align">H</span>
     `);
     buttons.spikes.class('button');
-    buttons.spikes.mousePressed(toggleShapeType);
+    buttons.spikes.mousePressed(toggleDots);
     buttons.spikes.parent(uiContainer);
 
     // Randomize Colors Button
@@ -448,6 +470,10 @@ function createUI() {
     let importText = createP('Drag .svg UGLYPH to the canvas');
     importText.class('text');
     importText.parent(uiContainer);
+
+    let creditsText = createP('◆')
+    creditsText.class('credits')
+    creditsText.parent(uiContainer);
   }
 }
 
@@ -457,18 +483,17 @@ function setup() {
     let canvas = createCanvas(windowWidth - 220, windowHeight);  // Adjust the width to exclude the UI column
     canvas.parent(canvasContainer);
     canvas.drop(handleFileDrop); // Allow SVG file to be dropped on canvas
-
-
     frameRate(60);
     framesPerBeat = (60 / bpm) * frameRate();  // Calculate frames per beat
     currentWidth = windowWidth;
     currentHeight = windowHeight;
     fillMode = "outline"; // Default fill mode
-    recolor();
     showUI = true;
     createUI();
     generateShape();
-    invertColors();
+    initEncoder();  // Initialize encoder at setup
+    //invertColors();
+    recolor();
   
 
 // Initial call to set the right button states based on the default mode
@@ -510,8 +535,13 @@ function adjustStrokeWidth(amount) {
 function windowResized() {
   currentWidth = windowWidth;
   currentHeight = windowHeight;
-  resizeCanvas(currentWidth-220, currentHeight);
+  resizeCanvas(currentWidth, currentHeight);
+
+  // Mark that a resize has happened
+  isResized = true;
 }
+
+
 function keyPressed() {
   switch (keyCode) {
     case 65: // 'A'
@@ -723,24 +753,8 @@ function recordGIF() {
   saveGif('uglyph.gif', gifDuration,{ units: 'frames', notificationDuration: 1, notificationID: 'customProgressBar' });
   
 }
-function recordVideo() {
-    // Get the dimensions of the canvas
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
 
-    // Save the current transformation state
-    drawingContext.save();
 
-    // Capture the image data from the canvas directly
-    let imageData = drawingContext.getImageData(0, 0, canvasWidth, canvasHeight);
-    encoder.addFrameRgba(imageData.data);
-
-    // Restore the previous transformation state
-    drawingContext.restore();
-
-    recordedFrames++;
-
-}
 function saveBlob(blob, fileName) {
   let link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -759,7 +773,7 @@ function reloadWindow() {
   //window.location.reload();
 }
 function toggleDots() {
-  dotsEnabled = (dotsEnabled === 'true') ? 'false' : 'true';
+  hideDots = (hideDots === true) ? false : true;
 }
 function draw(){
   
@@ -773,6 +787,9 @@ function draw(){
   //       console.log(framesPerBeat);
 
   //}
+  
+  
+
      
   
   
@@ -804,18 +821,18 @@ function draw(){
   }
   
   
-  if (spiky === true){
+  if (hideDots === false){
     buttons.spikes.html(`
-    <span class="left-align">★</span>
-    <span class="center-align">Hide Spikes</span>
-    <span class="right-align">B</span>
+    <span class="left-align">⁙</span>
+    <span class="center-align">Hide Vertices</span>
+    <span class="right-align">H</span>
 `);
   }
   else {
     buttons.spikes.html(`
-  <span class="left-align">★</span>
-  <span class="center-align">Show Spikes</span>
-  <span class="right-align">B</span> `)
+  <span class="left-align">⁙</span>
+  <span class="center-align">Show Vertices</span>
+  <span class="right-align">H</span> `)
 }
   
   translate(width / 2, height / 2);
@@ -903,15 +920,15 @@ function draw(){
   if (fillMode === "outline" || fillMode === "filled") {
     if (hideDots === false){
     // Draw dots at each point
-    strokeWeight(1);
-    fill(fillColor);
+    strokeWeight(0);
+    fill(edgeColor);
     stroke(edgeColor);
     for (let i = 0; i < points.length; i++) {
       // Calculate the size of the ellipse based on its position in the array
       let distanceToStart = i; // Distance from the current point to the start of the shape
       let distanceToEnd = points.length - 1 - i; // Distance from the current point to the end of the shape
       let ellipseSize = min(min(distanceToStart + 1, distanceToEnd + 1), 2);
-      ellipse(points[i].x, points[i].y, ellipseSize, ellipseSize);
+      ellipse(points[i].x, points[i].y, 3, 3);
     }
     }
     
@@ -972,7 +989,45 @@ if (recordedFrames === numFrames) {
     anchor.click();
     encoder.delete();
 
-    preload(); // reinitialize encoder
+    resetEncoder(); // reinitialize encoder
+}
+
+function recordVideo() {
+  if (isResized) {
+      resetEncoder();  // Reinitialize encoder with updated dimensions
+      isResized = false;
+  }
+
+  // Capture the image data from the updated canvas size
+  let canvasWidth = canvas.width;
+  let canvasHeight = canvas.height;
+  let imageData = drawingContext.getImageData(0, 0, canvasWidth, canvasHeight);
+  encoder.addFrameRgba(imageData.data);
+
+  recordedFrames++;
+
+  // Stop recording when reaching the desired number of frames
+  if (recordedFrames === numFrames) {
+      stopRecording();
+  }
+}
+
+function stopRecording() {
+  recording = false;
+  encoder.finalize();
+
+  // Save the encoded video
+  let videoData = encoder.FS.readFile(encoder.outputFilename);
+  let videoBlob = new Blob([videoData], { type: 'video/mp4' });
+  let videoUrl = URL.createObjectURL(videoBlob);
+
+  let downloadLink = document.createElement('a');
+  downloadLink.href = videoUrl;
+  downloadLink.download = encoder.outputFilename;
+  downloadLink.click();
+
+  // Reinitialize the encoder after saving
+  resetEncoder();
 }
 
 
