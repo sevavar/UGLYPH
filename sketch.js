@@ -118,9 +118,9 @@ function createUI() {
 
     // Label 1
     let label1 = createP(`
-      <span class="label-left" >UGLYPH v0.8</span>
-     <span class="label-right" style="color: red;"><a href="http://www.instagram.com/sevavar" target="_blank">⬥</a></span>
-    `);
+      <span class="label-left" >UGLYPH v0.81</span>
+       `);
+    // <span class="label-right" style="color: red;"><a href="http://www.instagram.com/sevavar" target="_blank">⬥</a>
     label1.class('label-container');
     label1.parent(uiContainer);
 
@@ -138,7 +138,7 @@ function createUI() {
     label4.parent(uiContainer);
 
     // Vertices Slider
-    sliders.amount = createSlider(100, 2000, amount);
+    sliders.amount = createSlider(100, 20000, amount);
     sliders.amount.class('slider');
     sliders.amount.input(() => {
       amount = sliders.amount.value();
@@ -473,6 +473,18 @@ function createUI() {
     let importText = createP('Drag .svg UGLYPH file to canvas');
     importText.class('text');
     importText.parent(uiContainer);
+
+
+    // Section 5: EXPORT
+    let credits = createP('CREDITS');
+    credits.class('sectionName');
+    credits.parent(uiContainer);
+
+
+    let creditsText = createP('<a href="http://www.instagram.com/sevavar" target="_blank">Seva Varfolomeev</a> at <a href="http://www.retry.studio" target="_blank">RETRY Studio</a>');
+    creditsText.class('credits');
+    creditsText.parent(uiContainer);
+
   }
 }
 
@@ -1041,33 +1053,32 @@ function stopRecording() {
 function mutation() {
   if (!shouldMutate) return; // Skip mutation logic if toggled off
 
-  for (let i = 0; i < points.length; i++) {
-    points[i].x += 0.2*velocities[i].vx;
-    points[i].y += 0.2*velocities[i].vy;
+ const checkInterval = 10; // adjust for performance vs. accuracy
 
-    // Check for collisions and change direction
-    for (let j = 0; j < points.length; j++) {
-      if (i != j) {
-        let dx = points[i].x - points[j].x;
-        let dy = points[i].y - points[j].y;
-        let distance = sqrt(dx * dx + dy * dy);
-        if (distance < reactionDistance) { // Adjust collision distance as needed
-          velocities[i].vx *= -1;
-          velocities[i].vy *= -1;
-          velocities[j].vx *= -1;
-          velocities[j].vy *= -1;
-        }
-      }
-    }
+for (let i = 0; i < points.length; i++) {
+  points[i].x += 0.2 * velocities[i].vx;
+  points[i].y += 0.2 * velocities[i].vy;
 
-    // Keep points within canvas bounds
-    if (points[i].x < -width/2+(strokeW/2) || points[i].x > width/2-(strokeW/2)) {
+  for (let j = i + 1; j < points.length && j < i + checkInterval; j++) {
+    let dx = points[i].x - points[j].x;
+    let dy = points[i].y - points[j].y;
+    let distance = sqrt(dx * dx + dy * dy);
+    if (distance < reactionDistance) {
       velocities[i].vx *= -1;
-    }
-    if (points[i].y < -height/2+(strokeW/2) || points[i].y > height/2-(strokeW/2)) {
       velocities[i].vy *= -1;
+      velocities[j].vx *= -1;
+      velocities[j].vy *= -1;
     }
   }
+
+  // Keep points within canvas bounds
+  if (points[i].x < -width / 2 + (strokeW / 2) || points[i].x > width / 2 - (strokeW / 2)) {
+    velocities[i].vx *= -1;
+  }
+  if (points[i].y < -height / 2 + (strokeW / 2) || points[i].y > height / 2 - (strokeW / 2)) {
+    velocities[i].vy *= -1;
+  }
+}
 }
 function toggleMutation() {
   shouldMutate = !shouldMutate; // Toggle the boolean flag
