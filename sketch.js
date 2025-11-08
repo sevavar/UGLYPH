@@ -508,7 +508,7 @@ sliders.mutationSpeed.parent(uiContainer);
     buttons.sMP4.parent(buttonContainer2);
 
     // Section 6: IMPORT
-    let section6 = createP('IMPORT<sup>BETA</sup>');
+    let section6 = createP('IMPORT<sup> BETA</sup>');
     
     section6.class('sectionName');
     section6.parent(uiContainer);
