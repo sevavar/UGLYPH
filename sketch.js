@@ -1,8 +1,8 @@
 // Blob
 let points = []; // Array to store blob vertex points
-let amount = 1000; // Number of blob points
-let blobSize = 250; // Size of the blob
-let hideDots = false; // Variable to manage dot visibility
+let amount = 2000; // Number of blob points
+let blobSize = 400; // Size of the blob
+let hideDots = false; // Dot visibility
 let spiky = true;
 let bpm = 30;  // Set your BPM here
 let framesPerBeat;
@@ -32,14 +32,18 @@ let shouldMutate = true;
 let prevShouldMutate = null;
 let smoothingEnabled = true;
 let velocities = [];
-let mutationSpeed = 20;
+let mutationSpeed = 10;
 let noiseScale = 0.025;
 let amplitude = 1;
 let frequency = 10;
 let reactionDistance = 2;
 
-// UI
 
+// SVG Import tracking
+let importedSVGPoints = null; // Store original imported SVG points
+let importedSVGVelocities = null; // Store velocities for imported SVG
+
+// UI
 let uiContainer;
 let canvasContainer;
 let showUI = true;
@@ -118,7 +122,7 @@ function createUI() {
 
     // Label 1
     let label1 = createP(`
-      <span class="label-left" >UGLYPH v0.81</span>
+      <span class="label-left" >UGLYPH v0.9</span>
        `);
     // <span class="label-right" style="color: red;"><a href="http://www.instagram.com/sevavar" target="_blank">⬥</a>
     label1.class('label-container');
@@ -130,46 +134,82 @@ function createUI() {
     section1.parent(uiContainer);
 
     // Vertices Label
-    let label4 = createP(`
-      <span class="label-left">Vertices</span>
-      <span class="label-right">${amount}</span>
-    `);
-    label4.class('label-container');
-    label4.parent(uiContainer);
+let label4 = createP(`
+  <span class="label-left">Vertices</span>
+  <span class="label-right">${amount}</span>
+`);
+label4.class('label-container');
+label4.parent(uiContainer);
 
-    // Vertices Slider
-    sliders.amount = createSlider(100, 20000, amount);
-    sliders.amount.class('slider');
-    sliders.amount.input(() => {
-      amount = sliders.amount.value();
-      label4.html(`
-        <span class="label-left">Vertices</span>
-        <span class="label-right">${amount}</span>
-      `);
-      generateShape();
-    });
-    sliders.amount.parent(uiContainer);
+// Vertices Slider
+sliders.amount = createSlider(100, 20000, amount);
+sliders.amount.class('slider');
+sliders.amount.input(() => {
+  let newAmount = sliders.amount.value();
+  label4.html(`
+    <span class="label-left">Vertices</span>
+    <span class="label-right">${newAmount}</span>
+  `);
+  
+  // Resample the existing shape to have the new number of vertices
+  if (points.length > 0) {
+    let newPoints = [];
+    let newVelocities = [];
+    
+    for (let i = 0; i < newAmount; i++) {
+      // Calculate position along the shape (0 to 1)
+      let t = i / newAmount;
+      // Map to index in old points array
+      let index = t * points.length;
+      let i1 = floor(index) % points.length;
+      let i2 = (i1 + 1) % points.length;
+      let amt = index - floor(index);
+      
+      // Interpolate between two adjacent points
+      let x = lerp(points[i1].x, points[i2].x, amt);
+      let y = lerp(points[i1].y, points[i2].y, amt);
+      
+      newPoints.push({ x: x, y: y });
+      newVelocities.push({ 
+        vx: random(-mutationSpeed, mutationSpeed), 
+        vy: random(-mutationSpeed, mutationSpeed) 
+      });
+    }
+    
+    points = newPoints;
+    velocities = newVelocities;
+    amount = newAmount;
+  }
+});
+sliders.amount.parent(uiContainer);
 
     // Size Label
-    let label7 = createP(`
-      <span class="label-left">Size</span>
-      <span class="label-right">${blobSize}</span>
-    `);
-    label7.class('label-container');
-    label7.parent(uiContainer);
+let label7 = createP(`
+  <span class="label-left">Size</span>
+  <span class="label-right">${blobSize}</span>
+`);
+label7.class('label-container');
+label7.parent(uiContainer);
 
-    // Size Slider
-    sliders.size = createSlider(0, 1000, blobSize);
-    sliders.size.class('slider');
-    sliders.size.input(() => {
-      blobSize = sliders.size.value();
-      label7.html(`
-        <span class="label-left">Size</span>
-        <span class="label-right">${blobSize}</span>
-      `);
-      generateShape();
-    });
-    sliders.size.parent(uiContainer);
+// Size Slider
+sliders.size = createSlider(0, 1000, blobSize);
+sliders.size.class('slider');
+sliders.size.input(() => {
+  let oldSize = blobSize;
+  blobSize = sliders.size.value();
+  label7.html(`
+    <span class="label-left">Size</span>
+    <span class="label-right">${blobSize}</span>
+  `);
+  if (oldSize > 0) {
+    let scaleFactor = blobSize / oldSize;
+    for (let i = 0; i < points.length; i++) {
+      points[i].x *= scaleFactor;
+      points[i].y *= scaleFactor;
+    }
+  }
+});
+sliders.size.parent(uiContainer);
 
     // Section 2: MUTATION
     let section2 = createP('MUTATION');
@@ -206,26 +246,29 @@ function createUI() {
     buttons.reset.mousePressed(reloadWindow);
     buttons.reset.parent(uiContainer);
 
-    // Mutation Speed Label
-    let label6 = createP(`
-      <span class="label-left">Speed</span>
-      <span class="label-right">${mutationSpeed}</span>
-    `);
-    label6.class('label-container');
-    label6.parent(uiContainer);
+   // Mutation Speed Label
+let label6 = createP(`
+  <span class="label-left">Speed</span>
+  <span class="label-right">${mutationSpeed}</span>
+`);
+label6.class('label-container');
+label6.parent(uiContainer);
 
-    // Mutation Speed Slider
-    sliders.mutationSpeed = createSlider(0, 50, mutationSpeed);
-    sliders.mutationSpeed.class('slider');
-    sliders.mutationSpeed.input(() => {
-      mutationSpeed = sliders.mutationSpeed.value();
-      label6.html(`
-        <span class="label-left">Speed</span>
-        <span class="label-right">${mutationSpeed}</span>
-      `);
-      generateShape();
-    });
-    sliders.mutationSpeed.parent(uiContainer);
+// Mutation Speed Slider
+sliders.mutationSpeed = createSlider(0, 50, mutationSpeed);
+sliders.mutationSpeed.class('slider');
+sliders.mutationSpeed.input(() => {
+  mutationSpeed = sliders.mutationSpeed.value();
+  label6.html(`
+    <span class="label-left">Speed</span>
+    <span class="label-right">${mutationSpeed}</span>
+  `);
+  for (let i = 0; i < velocities.length; i++) {
+    velocities[i].vx = random(-mutationSpeed, mutationSpeed);
+    velocities[i].vy = random(-mutationSpeed, mutationSpeed);
+  }
+});
+sliders.mutationSpeed.parent(uiContainer);
 
 
     let label9 = createP(`
@@ -465,12 +508,14 @@ function createUI() {
     buttons.sMP4.parent(buttonContainer2);
 
     // Section 6: IMPORT
-    let section6 = createP('IMPORT');
+    let section6 = createP('IMPORT<sup>BETA</sup>');
+    
     section6.class('sectionName');
     section6.parent(uiContainer);
+    
 
     // Import Text
-    let importText = createP('Drag .svg UGLYPH file to canvas');
+    let importText = createP('Drag an .svg file to canvas');
     importText.class('text');
     importText.parent(uiContainer);
 
@@ -629,6 +674,7 @@ function keyPressed() {
       break;
       case 32: // 'Space'
       toggleSmoothing();
+      event.preventDefault(); // This prevents scrolling
       break;
   }
 }
@@ -785,15 +831,30 @@ function createFileName(prefix, extension){
   return `${prefix}_${datePart}${timePart}.${extension}`;
 }
 function reloadWindow() {
-  generateShape();
-  //window.reload();
-  //window.location.reload();
+  if (importedSVGPoints && importedSVGVelocities) {
+    // Reset to imported SVG shape
+    points = importedSVGPoints.map(p => ({...p})); // Deep copy
+    velocities = importedSVGVelocities.map(v => ({...v})); // Deep copy
+    amount = points.length;
+  } else {
+    // Reset to generated shape
+    generateShape();
+  }
 }
+
 function toggleDots() {
   hideDots = (hideDots === true) ? false : true;
 }
 function draw(){
   
+
+  if (points && points.length > 0) {
+  noFill();
+  stroke(255, 0, 0);
+  beginShape();
+  for (let p of points) vertex(p.x, p.y);
+  endShape(CLOSE);
+}
   
   
  // {
@@ -822,7 +883,7 @@ function draw(){
   if (smoothingEnabled === true) {
     buttons.freeze.html(`
     <span class="left-align">⏸</span>
-    <span class="center-align">Pause</span>
+    <span class="center-align">Freeze</span>
     <span class="right-align">Space</span>
       
       `);
@@ -831,7 +892,7 @@ function draw(){
   else {
     buttons.freeze.html(` 
     <span class="left-align">⏸</span>
-    <span class="center-align">Paused</span>
+    <span class="center-align">Freezed</span>
     <span class="right-align">Space</span>
       `);
       
@@ -1104,6 +1165,8 @@ function updateButtonStates() {
 function handleFileDrop(file) {
   if (file.type === 'image' && file.subtype === 'svg+xml') {
       let svgData = file.data;
+      
+
 
       // Check if the data is base64 encoded
       if (svgData.startsWith('data:image/svg+xml;base64,')) {
@@ -1132,39 +1195,54 @@ function handleFileDrop(file) {
       if (pathElement) {
           let pathData = pathElement.getAttribute('d');
           console.log('Path data:', pathData);
-          let svgPoints = parseSVGPath(pathData);
+          let svgPoints = parseSVGPath(pathData, amount);
           console.log('Extracted points:', svgPoints);
+          
+         if (svgPoints && svgPoints.length > 0) {
+  // compute bounds of imported points
+  const minX = Math.min(...svgPoints.map(p => p.x));
+  const maxX = Math.max(...svgPoints.map(p => p.x));
+  const minY = Math.min(...svgPoints.map(p => p.y));
+  const maxY = Math.max(...svgPoints.map(p => p.y));
+  const svgW = maxX - minX;
+  const svgH = maxY - minY;
 
-          if (svgPoints.length > 0) {
-              // Calculate dimensions of the SVG
-              const svgWidth = parseFloat(svgDoc.documentElement.getAttribute('width')) || 100; // Fallback width
-              const svgHeight = parseFloat(svgDoc.documentElement.getAttribute('height')) || 100; // Fallback height
+  if (!(svgW > 0 && svgH > 0)) {
+    console.warn("Invalid SVG bounds after sampling");
+    return;
+  }
 
-              // Get canvas dimensions
-              const canvasWidth = width; // p5 canvas width
-              const canvasHeight = height; // p5 canvas height
+  // Normalize into a centered unit box [-0.5, 0.5]
+  const normalized = svgPoints.map(p => ({
+    x: (p.x - minX) / svgW - 0.5,
+    y: (p.y - minY) / svgH - 0.5
+  }));
 
-              // Calculate scaling factor
-              const scale = Math.min(canvasWidth / svgWidth, canvasHeight / svgHeight);
+  // Scale to a fraction of the canvas and center
+  const targetSize = 0.6 * Math.min(width, height); // fraction of canvas
+  const scale = targetSize; // because normalized coords span ~1 unit
 
-              // Calculate offsets to center the SVG
-              const xOffset = (canvasWidth - (svgWidth * scale)) / 2 - canvasWidth/2;
-              const yOffset = (canvasHeight - (svgHeight * scale)) / 2 - canvasHeight/2;
+ points = normalized.map(p => ({
+  x: p.x * scale,
+  y: p.y * scale
+}));
 
-              // Transform points to be centered and scaled
-              points = svgPoints.map(point => ({
-                  x: xOffset + point.x * scale,
-                  y: yOffset + point.y * scale
-              }));
+  // Recreate velocities so mutation works immediately
+  velocities = points.map(() => ({
+    vx: random(-mutationSpeed, mutationSpeed),
+    vy: random(-mutationSpeed, mutationSpeed)
+  }));
 
-              // Create velocities
-              velocities = points.map(() => ({
-                  vx: random(-mutationSpeed, mutationSpeed),
-                  vy: random(-mutationSpeed, mutationSpeed)
-              }));
+  // Store the imported SVG points and velocities for reset
+  importedSVGPoints = points.map(p => ({...p})); // Deep copy
+  importedSVGVelocities = velocities.map(v => ({...v})); // Deep copy
+  amount = points.length; // Update amount to match imported SVG
 
-              console.log('Transformed SVG points and velocities set');
-          }
+  console.log("SVG imported -> points:", points.length);
+}
+
+
+
       } else {
           console.log('No path element found in the SVG');
       }
@@ -1180,39 +1258,106 @@ function decodeHTMLEntities(str) {
 }
 
 // Convert SVG path data ("d" attribute) into an array of points
-function parseSVGPath(pathData) {
-  let commands = pathData.match(/[a-df-z][^a-df-z]*/ig);
-  let pointsArray = [];
-  let currentPoint = { x: 0, y: 0 };
+// ---------- Robust path sampler using native SVGPathElement ----------
+function parseSVGPath(pathData, targetPoints = amount) {
+  if (!pathData) return [];
 
-  for (let command of commands) {
-      let type = command[0];
-      let values = command.slice(1).trim().split(/[\s,]+/).map(Number);
+  try {
+    // Create an SVG path element in the DOM (not visible)
+    const svgNS = "http://www.w3.org/2000/svg";
+    const tmpSvg = document.createElementNS(svgNS, "svg");
+    tmpSvg.setAttribute("width", 1);
+    tmpSvg.setAttribute("height", 1);
+    tmpSvg.style.position = "absolute";
+    tmpSvg.style.left = "-9999px";
+    tmpSvg.style.top = "-9999px";
+    document.body.appendChild(tmpSvg);
 
-      switch (type) {
-          case 'M':  // Move to
-          case 'L':  // Line to
-              currentPoint = { x: values[0], y: values[1] };
-              pointsArray.push(currentPoint);
-              break;
-          case 'C':  // Bezier curve (Cubic)
-              // For simplicity, we use the endpoint of the curve
-              currentPoint = { x: values[4], y: values[5] };
-              pointsArray.push(currentPoint);
-              break;
-          case 'Z':  // Close path (optional)
-              if (pointsArray.length > 0) {
-                  // Add the first point again to close the shape
-                  pointsArray.push(pointsArray[0]);
-              }
-              break;
-      }
+    const pathEl = document.createElementNS(svgNS, "path");
+    pathEl.setAttribute("d", pathData);
+    tmpSvg.appendChild(pathEl);
 
-      // Trim to first 2000 points
-      if (pointsArray.length >= 3000) {
-          break;
-      }
+    // getTotalLength / getPointAtLength are very reliable
+    const total = pathEl.getTotalLength();
+    if (!(total > 0)) {
+      // cleanup
+      tmpSvg.remove();
+      return [];
+    }
+
+    const pts = [];
+    // sample uniformly along length
+    for (let i = 0; i < targetPoints; i++) {
+      const L = (i / targetPoints) * total;
+      const p = pathEl.getPointAtLength(L);
+      pts.push({ x: p.x, y: p.y });
+    }
+
+    // cleanup
+    tmpSvg.remove();
+    return pts;
+  } catch (err) {
+    console.error("parseSVGPath error:", err);
+    return [];
   }
+}
 
-  return pointsArray;
+// helper: get point at a given length along polyline
+function getPointAtLength(points, length, totalLength) {
+  let distSoFar = 0;
+  for (let i = 1; i < points.length; i++) {
+    const p1 = points[i - 1];
+    const p2 = points[i];
+    const segLen = dist(p1.x, p1.y, p2.x, p2.y);
+    if (distSoFar + segLen >= length) {
+      const ratio = (length - distSoFar) / segLen;
+      return {
+        x: lerp(p1.x, p2.x, ratio),
+        y: lerp(p1.y, p2.y, ratio),
+      };
+    }
+    distSoFar += segLen;
+  }
+  return points[points.length - 1];
+}
+
+
+// --- helpers to measure Path2D ---
+function getPathLength(ctx, path, segments = 1000) {
+  let prev = null;
+  let len = 0;
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const pt = getPointAtLength(ctx, path, t, segments);
+    if (prev) len += dist(pt.x, pt.y, prev.x, prev.y);
+    prev = pt;
+  }
+  return len;
+}
+
+function getPointAtLength(ctx, path, len, segments = 1000) {
+  // Approximate by sampling along a normalized t parameter
+  const bounds = path.getBounds?.() || {x:0,y:0,width:1,height:1}; // fallback if no .getBounds
+  const box = [bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height];
+  const step = 1 / segments;
+  let total = 0;
+  let prev = null;
+  for (let i = 0; i <= 1; i += step) {
+    const pt = pointOnPath(ctx, path, i, box);
+    if (prev) total += dist(pt.x, pt.y, prev.x, prev.y);
+    if (total >= len) return pt;
+    prev = pt;
+  }
+  return prev;
+}
+
+function pointOnPath(ctx, path, t, box) {
+  // simple bounding-based approximation (replaceable by proper path sampling lib)
+  const { x, y, width, height } = {
+    x: lerp(box[0], box[2], t),
+    y: lerp(box[1], box[3], t),
+    width: box[2] - box[0],
+    height: box[3] - box[1],
+  };
+  return { x, y };
 }
