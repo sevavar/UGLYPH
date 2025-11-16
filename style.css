@@ -1,10 +1,10 @@
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     height: 100%;
     font: 10px monospace, monospace;
-    overflow:hidden
-    
+    overflow: hidden
 }
 
 body {
@@ -16,9 +16,10 @@ canvas {
     display: block;
     width: 100%;
     height: 100%;
+
     #canvas-container {
-      margin-left: 0;
-      width: 100%;
+        margin-left: 0;
+        width: 100%;
     }
 }
 
@@ -29,7 +30,7 @@ canvas {
   } */
 
 #ui-container {
-    
+
     width: 223px;
     background-color: #444;
     color: white;
@@ -44,7 +45,7 @@ canvas {
 }
 
 #canvas-container {
-    
+
     flex-shrink: 1;
     flex-grow: 1;
     display: flex;
@@ -55,13 +56,14 @@ canvas {
     overflow: hidden;
     margin-left: 0;
     width: 100%;
-    
+
 }
 
 .button-container {
 
     display: flex;
-    flex-wrap: nowrap; /* Allow buttons to wrap to the next line if necessary */
+    flex-wrap: nowrap;
+    /* Allow buttons to wrap to the next line if necessary */
     margin: 0;
 }
 
@@ -75,7 +77,7 @@ canvas {
     color: #fff;
 }
 
-.credits{
+.credits {
     /* display: flex;
     justify-content: space-between;
     align-items: center; */
@@ -85,8 +87,14 @@ canvas {
 .sectionName {
     opacity: 0.4;
     font-size: 10px;
-    padding-top:10px;
-    
+    padding-top: 8px;
+
+}
+
+.footer {
+    /*padding-top: 0px;*/
+    padding-top:6px;
+    padding-bottom: 0px;
 }
 
 .label-container {
@@ -94,23 +102,35 @@ canvas {
     justify-content: space-between;
     width: 200px;
     margin-bottom: 0;
-    padding-bottom: 2px; /* Explicitly set margin to 0 */
-    
+    padding-bottom: 2px;
+    /* Explicitly set margin to 0 */
+
 }
 
 
 a {
     color: #ffffff;
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 
-.button { width: 200px; }
-.mediumbutton { width: 100px; }
-.smallbutton { width: 50px; }
+.button {
+    width: 200px;
+}
+
+.mediumbutton {
+    width: 100px;
+}
+
+.smallbutton {
+    width: 50px;
+}
 
 
-.slider, .button, .smallbutton, .mediumbutton {
+.slider,
+.button,
+.smallbutton,
+.mediumbutton {
     display: block;
     margin: 3px 0;
     font: 10px monospace, monospace;
@@ -121,7 +141,9 @@ a {
 }
 
 
-.button, .smallbutton, .mediumbutton {
+.button,
+.smallbutton,
+.mediumbutton {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -133,25 +155,29 @@ a {
 }
 
 
-.button:hover, .smallbutton:hover, .mediumbutton:hover {
+.button:hover,
+.smallbutton:hover,
+.mediumbutton:hover {
     background-color: #BABABA;
 }
 
-.button:active, .smallbutton:active {
+.button:active,
+.smallbutton:active {
     background-color: #fff;
     color: #000;
 
-    
+
 }
 
 .smallbutton:active {
     background-color: #ff0000;
 }
 
-.button:active, .mediumbutton.active {
+.button:active,
+.mediumbutton.active {
     background-color: #fff;
     color: black;
-    
+
 }
 
 .mediumbutton {
@@ -161,13 +187,20 @@ a {
 
 
 
-.left-align, .center-align, .right-align {
+.left-align,
+.center-align,
+.right-align {
     flex: 1;
     text-align: left;
 }
 
-.center-align { text-align: center; }
-.right-align { text-align: right; }
+.center-align {
+    text-align: center;
+}
+
+.right-align {
+    text-align: right;
+}
 
 
 
@@ -178,7 +211,7 @@ input[type=range] {
     width: 200px;
     background: #000;
     margin: 3px 0;
-    
+
 }
 
 input[type=range]:focus {
@@ -205,7 +238,7 @@ input[type=range]::-webkit-slider-thumb {
     cursor: pointer;
     border-radius: 0;
     border: 0px solid #000;
-    
+
 }
 
 input[type=range]::-moz-range-thumb,
@@ -224,30 +257,95 @@ input[type=range]::-ms-thumb {
 
 /* Chrome, Safari, Edge Scrollbar Styling */
 #ui-container::-webkit-scrollbar {
-    width: 2px; /* Width of the scrollbar */
+    width: 2px;
+    /* Width of the scrollbar */
 }
 
 #ui-container::-webkit-scrollbar-track {
-    background: #444; /* Color of the scrollbar track */
+    background: #444;
+    /* Color of the scrollbar track */
 }
 
 #ui-container::-webkit-scrollbar-thumb {
-    background-color: #aaa; /* Scrollbar thumb color */
-    border-radius: 0px; /* Rounded corners for the scrollbar thumb */
-    border: 0px solid #222; /* Padding around the thumb */
+    background-color: #aaa;
+    /* Scrollbar thumb color */
+    border-radius: 0px;
+    /* Rounded corners for the scrollbar thumb */
+    border: 0px solid #222;
+    /* Padding around the thumb */
 }
 
 #ui-container::-webkit-scrollbar-thumb:hover {
-    background-color: #aaa; /* Thumb color on hover */
+    background-color: #aaa;
+    /* Thumb color on hover */
 }
 
 #ui-container::-webkit-scrollbar-thumb:active {
-    background-color: #aaa; /* Thumb color when active (on click) */
+    background-color: #aaa;
+    /* Thumb color when active (on click) */
 }
 
 
+#watermark-wrap {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 9999;
+    /* above the canvas */
+    pointer-events: auto;
+    /* allow clicks */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
 
-@media only screen and (max-width: 768px) {
+#credits-text {
+    font-size: 10px;
+    color: #BABABA;
+    opacity: 0.5;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 1px;
+    font-family: monospace;
+    user-select: none;
+    -webkit-user-drag: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    transform: rotate(180deg);
+}
+
+#credits-text a {
+    opacity: 1.0;
+    transition: opacity 150ms ease;
+    color: #BABABA;
+}
+
+#credits-text a:hover {
+    color: white;
+    opacity: 1.0;
+}
+
+#watermark {
+    width: 48px;
+    /* default size */
+    height: auto;
+    display: block;
+    opacity: 0.5;
+    /* default opacity (adjustable) */
+    transition: opacity 150ms ease;
+    cursor: pointer;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+#watermark:hover {
+    opacity: 1.0;
+}
+
+@media only screen and (max-width: 550px) {
     #ui-container {
         display: none;
     }
