@@ -27,10 +27,10 @@ let edgeColor = 'black';
 
 // Modifier
 let currentMode = "attract";
-let touchRadius = 100;
+let touchRadius = 50;
 let touchForce = 10;
 let smoothing = 1;
-let explosionForce = 400;
+let explosionForce = 100;
 
 
 //Mutation
@@ -63,6 +63,7 @@ let buttonDist = 35;
 let currentWidth, currentHeight;
 
 let label; // Global label reference for Amount slider (complexity)
+let label1; // Global label reference for header with recording status
 let appliedScale = 1;
 
 
@@ -72,7 +73,7 @@ let isResized = false;
 let button;
 let encoder;
 const frate = 30 // frame rate;
-const numFrames = 300 // num of frames to record;
+let numFrames = 180; // num of frames to record (adjustable via UI)
 let recording = false;
 let recordedFrames = 0;
 let count = 0;
@@ -81,33 +82,114 @@ let frameCounter = 0;
 
 
 //  GIF
-let gifDuration = 100;
+let recordingGif = false;
+let gifStartFrame = 0;
+let gifRendering = false;
+
+// Recording status states
+let showDoneMessage = false;
+let doneMessageStartFrame = 0;
 
 function initEncoder() {
-  HME.createH264MP4Encoder().then(enc => {
+  return HME.createH264MP4Encoder().then(enc => {
     encoder = enc;
-    encoder.outputFilename = 'uglyph';
-    encoder.width = canvas.width;
-    encoder.height = canvas.height;
+    encoder.outputFilename = 'uglyph.mp4';
+    encoder.width = width;  // Use p5.js width (not canvas.width which may include pixel density)
+    encoder.height = height; // Use p5.js height
     encoder.frameRate = 30;
     encoder.kbps = 80000; // Video quality
     encoder.groupOfPictures = 10; // Lower for fast actions
     encoder.initialize();
+    console.log('Encoder initialized:', encoder.width, 'x', encoder.height);
+    return encoder;
   });
 }
 function resetEncoder() {
   if (encoder) {
-    encoder.delete(); // Properly delete the existing encoder before re-initializing
+    try {
+      encoder.finalize(); // Always finalize before deleting
+    } catch (err) {
+      // Ignore finalize errors if encoder wasn't used
+    }
+    encoder.delete();
   }
-  initEncoder();
+  return initEncoder();
+}
+
+function startMP4Recording() {
+  console.log('Starting MP4 recording, reinitializing encoder with current canvas size...');
+  recordedFrames = 0;
+  
+  // Clean up existing encoder properly
+  if (encoder) {
+    try {
+      encoder.finalize(); // Finalize before deleting
+    } catch (err) {
+      // Ignore finalize errors if encoder wasn't used
+    }
+    encoder.delete();
+  }
+  
+  // Get actual pixel dimensions (accounts for pixel density)
+  const density = pixelDensity();
+  const actualWidth = width * density;
+  const actualHeight = height * density;
+  
+  HME.createH264MP4Encoder().then(enc => {
+    encoder = enc;
+    encoder.outputFilename = 'uglyph.mp4';
+    encoder.width = actualWidth;
+    encoder.height = actualHeight;
+    encoder.frameRate = 30;
+    encoder.kbps = 80000;
+    encoder.groupOfPictures = 10;
+    encoder.initialize();
+    console.log('Encoder ready for recording:', encoder.width, 'x', encoder.height, `(density: ${density})`);
+    
+    // Start recording only after encoder is initialized
+    recording = true;
+  }).catch(err => {
+    console.error('Failed to initialize encoder:', err);
+  });
+}
+
+function recordVideo() {
+  if (!encoder) {
+    console.warn('Encoder not ready yet');
+    recording = false;
+    return;
+  }
+  
+  // Get actual pixel dimensions
+  const density = pixelDensity();
+  const actualWidth = width * density;
+  const actualHeight = height * density;
+  
+  // Verify dimensions match
+  if (encoder.width !== actualWidth || encoder.height !== actualHeight) {
+    console.error(`Dimension mismatch! Encoder: ${encoder.width}x${encoder.height}, Canvas: ${actualWidth}x${actualHeight} (density: ${density})`);
+    recording = false;
+    return;
+  }
+  
+  // Capture current canvas frame at actual pixel resolution
+  const ctx = canvas.elt.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, actualWidth, actualHeight);
+  
+  // Add frame to encoder
+  encoder.addFrameRgba(imageData.data);
+  recordedFrames++;
+  
+  console.log(`Recording frame ${recordedFrames}/${numFrames}`);
 }
 function createUI() {
   if (showUI === true) {
     let uiContainer = select('#ui-container');
 
-    // Label 1
-    let label1 = createP(`
+    // Label 1 - Header with recording status
+    label1 = createP(`
       <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-right"></span>
        `);
     // <span class="label-right" style="color: red;"><a href="http://www.instagram.com/sevavar" target="_blank">⬥</a>
     label1.class('label-container');
@@ -119,16 +201,41 @@ function createUI() {
     section6.class('sectionName');
     section6.parent(uiContainer);
 
+    // Upload SVG Button
+    buttons.uploadSVG = createButton(`
+      <span class="left-align">⬆</span>
+      <span class="center-align">UPLOAD SVG</span>
+      <span class="right-align">⬆</span>
+    `);
+    buttons.uploadSVG.class('button');
+    buttons.uploadSVG.mousePressed(() => {
+      // Create hidden file input
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.svg,image/svg+xml';
+      input.onchange = (e) => {
+        let file = e.target.files[0];
+        if (file && file.type === 'image/svg+xml') {
+          let reader = new FileReader();
+          reader.onload = (event) => {
+            // Create p5.js-compatible file object
+            const p5File = {
+              type: 'image',
+              subtype: 'svg+xml',
+              data: event.target.result,
+              name: file.name
+            };
+            handleFileDrop(p5File);
+          };
+          reader.readAsDataURL(file); // Read as data URL to match p5 drop format
+        }
+      };
+      input.click();
+    });
+    buttons.uploadSVG.parent(uiContainer);
 
-    // Import Text
-    let importText = createP('Drag any .svg file to the canvas!');
-    importText.class('text');
-    importText.parent(uiContainer);
-
-
-
-    // Section 1: GENERATION
-    let section1 = createP('GENERATION');
+    // Section 1: SHAPE
+    let section1 = createP('SHAPE');
     section1.class('sectionName');
     section1.parent(uiContainer);
 
@@ -136,68 +243,69 @@ function createUI() {
 
 
 
-    // Vertices Label
-label4 = createP(`
-  <span class="label-left">Complexity</span>
+    // Vertices Slider with integrated label
+const vertexSliderWrapper = createDiv('');
+vertexSliderWrapper.class('slider-wrapper');
+vertexSliderWrapper.parent(uiContainer);
+
+const vertexLabel = createDiv(`
+  <span class="label-left">Vertex Count</span>
   <span class="label-right">${amount}</span>
 `);
-label4.class('label-container');
-label4.parent(uiContainer);
+vertexLabel.class('slider-label');
+vertexLabel.parent(vertexSliderWrapper);
 
-// Vertices Slider
 sliders.amount = createSlider(100, 10000, amount);
 sliders.amount.class('slider');
 sliders.amount.input(() => {
   const newAmount = sliders.amount.value();
-  label4.html(`
-    <span class="label-left">Complexity</span>
+  vertexLabel.html(`
+    <span class="label-left">Vertex Count</span>
     <span class="label-right">${newAmount}</span>
   `);
-  // call centralized resampler
   resampleTotal(newAmount);
 });
-sliders.amount.parent(uiContainer);
+sliders.amount.parent(vertexSliderWrapper);
 
-    // Size Label
-    let label7 = createP(`
-  <span class="label-left">Size</span>
+    // Size Slider with integrated label
+const sizeSliderWrapper = createDiv('');
+sizeSliderWrapper.class('slider-wrapper');
+sizeSliderWrapper.parent(uiContainer);
+
+const sizeLabel = createDiv(`
+  <span class="label-left">Scale</span>
   <span class="label-right">${blobSize}</span>
 `);
-    label7.class('label-container');
-    label7.parent(uiContainer);
+sizeLabel.class('slider-label');
+sizeLabel.parent(sizeSliderWrapper);
 
-    // Size Slider
-    sliders.size = createSlider(0, 1000, blobSize);
-    sliders.size.class('slider');
-     sliders.size.input(() => {
-      let oldSize = blobSize;
-      blobSize = sliders.size.value();
-      label7.html(`
-    <span class="label-left">Size</span>
+sliders.size = createSlider(0, 1000, blobSize);
+sliders.size.class('slider');
+sliders.size.input(() => {
+  let oldSize = blobSize;
+  blobSize = sliders.size.value();
+  sizeLabel.html(`
+    <span class="label-left">Scale</span>
     <span class="label-right">${blobSize}</span>
   `);
-      if (oldSize > 0) {
-        let scaleFactor = blobSize / oldSize;
-        // Apply scaling to every shape (not only the first)
-        for (let s = 0; s < shapes.length; s++) {
-          const shp = shapes[s];
-          for (let i = 0; i < shp.points.length; i++) {
-            shp.points[i].x *= scaleFactor;
-            shp.points[i].y *= scaleFactor;
-          }
-        }
-        // accumulate the applied scale so reload can re-apply it
-        appliedScale *= scaleFactor;
-
-        // keep UI refs in sync
-        if (shapes.length > 0) {
-          points = shapes[0].points;
-          velocities = shapes[0].velocities;
-          amount = points.length;
-        }
+  if (oldSize > 0) {
+    let scaleFactor = blobSize / oldSize;
+    for (let s = 0; s < shapes.length; s++) {
+      const shp = shapes[s];
+      for (let i = 0; i < shp.points.length; i++) {
+        shp.points[i].x *= scaleFactor;
+        shp.points[i].y *= scaleFactor;
       }
-    });
-    sliders.size.parent(uiContainer);
+    }
+    appliedScale *= scaleFactor;
+    if (shapes.length > 0) {
+      points = shapes[0].points;
+      velocities = shapes[0].velocities;
+      amount = points.length;
+    }
+  }
+});
+sliders.size.parent(sizeSliderWrapper);
 
     // Section 2: MUTATION
     let section2 = createP('MUTATION');
@@ -207,7 +315,7 @@ sliders.amount.parent(uiContainer);
     // Mutation Button
     buttons.mutation = createButton(`
       <span class="left-align">■</span>
-      <span class="center-align">Stop</span>
+      <span class="center-align">Relax</span>
       <span class="right-align">M</span>
     `);
     buttons.mutation.class('button');
@@ -217,8 +325,8 @@ sliders.amount.parent(uiContainer);
     // Freeze Button
     buttons.freeze = createButton(`
       <span class="left-align">⏸</span>
-      <span class="center-align">Pause</span>
-      <span class="right-align">Space</span>
+      <span class="center-align">Freeze</span>
+      <span class="right-align">Unfreeze</span>
     `);
     buttons.freeze.class('button');
     buttons.freeze.mousePressed(toggleSmoothing);
@@ -234,68 +342,65 @@ sliders.amount.parent(uiContainer);
     buttons.reset.mousePressed(reloadWindow);
     buttons.reset.parent(uiContainer);
 
-    // Mutation Intensity (former Speed) Label
-    let label6 = createP(`
-  <span class="label-left">Intensity</span>
+    // Mutation Intensity Slider with integrated label
+const mutationSpeedSliderWrapper = createDiv('');
+mutationSpeedSliderWrapper.class('slider-wrapper');
+mutationSpeedSliderWrapper.parent(uiContainer);
+
+const mutationSpeedLabel = createDiv(`
+  <span class="label-left">Mutation Intensity</span>
   <span class="label-right">${mutationSpeed}</span>
 `);
-    label6.class('label-container');
-    label6.parent(uiContainer);
+mutationSpeedLabel.class('slider-label');
+mutationSpeedLabel.parent(mutationSpeedSliderWrapper);
 
-    // Mutation Intensity (former Speed) Slider
-    sliders.mutationSpeed = createSlider(0, 50, mutationSpeed);
-    sliders.mutationSpeed.class('slider');
-    sliders.mutationSpeed.input(() => {
-      mutationSpeed = sliders.mutationSpeed.value();
-      label6.html(`
-    <span class="label-left">Intensity</span>
+sliders.mutationSpeed = createSlider(0, 50, mutationSpeed);
+sliders.mutationSpeed.class('slider');
+sliders.mutationSpeed.input(() => {
+  mutationSpeed = sliders.mutationSpeed.value();
+  mutationSpeedLabel.html(`
+    <span class="label-left">Mutation Intensity</span>
     <span class="label-right">${mutationSpeed}</span>
   `);
-
-      // Update velocities for every shape
-      for (let s = 0; s < shapes.length; s++) {
-        const shp = shapes[s];
-        // Ensure velocity array matches points length
-        if (!shp.velocities || shp.velocities.length !== shp.points.length) {
-          shp.velocities = shp.points.map(() => ({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) }));
-        } else {
-          for (let i = 0; i < shp.velocities.length; i++) {
-            shp.velocities[i].vx = random(-mutationSpeed, mutationSpeed);
-            shp.velocities[i].vy = random(-mutationSpeed, mutationSpeed);
-          }
-        }
+  for (let s = 0; s < shapes.length; s++) {
+    const shp = shapes[s];
+    if (!shp.velocities || shp.velocities.length !== shp.points.length) {
+      shp.velocities = shp.points.map(() => ({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) }));
+    } else {
+      for (let i = 0; i < shp.velocities.length; i++) {
+        shp.velocities[i].vx = random(-mutationSpeed, mutationSpeed);
+        shp.velocities[i].vy = random(-mutationSpeed, mutationSpeed);
       }
+    }
+  }
+  if (shapes.length > 0) {
+    velocities = shapes[0].velocities;
+  }
+});
+sliders.mutationSpeed.parent(mutationSpeedSliderWrapper);
 
-      // keep UI alias in sync
-      if (shapes.length > 0) {
-        velocities = shapes[0].velocities;
-      }
-    });
-    sliders.mutationSpeed.parent(uiContainer);
+// Vertex Collisions Slider with integrated label
+const reactionDistanceSliderWrapper = createDiv('');
+reactionDistanceSliderWrapper.class('slider-wrapper');
+reactionDistanceSliderWrapper.parent(uiContainer);
 
+const reactionDistanceLabel = createDiv(`
+  <span class="label-left">Vertex Collisions</span>
+  <span class="label-right">${reactionDistance}</span>
+`);
+reactionDistanceLabel.class('slider-label');
+reactionDistanceLabel.parent(reactionDistanceSliderWrapper);
 
-    let label9 = createP(`
-      <span class="label-left"> Collisions</span>
-      <span class="label-right">${reactionDistance}</span>
-    `);
-    label9.class('label-container');
-    label9.parent(uiContainer);
-
-    sliders.reactionDistance = createSlider(0, 10, reactionDistance);
-    sliders.reactionDistance.class('slider');
-
-    // Update label and value when the slider is moved
-    sliders.reactionDistance.input(() => {
-      reactionDistance = sliders.reactionDistance.value();
-
-      // Update the label with the new value of reactionDistance
-      label9.html(`
-        <span class="label-left">Collisions</span>
-        <span class="label-right">${reactionDistance}</span>
-      `);
-
-    });
-    sliders.reactionDistance.parent(uiContainer);
+sliders.reactionDistance = createSlider(0, 10, reactionDistance);
+sliders.reactionDistance.class('slider');
+sliders.reactionDistance.input(() => {
+  reactionDistance = sliders.reactionDistance.value();
+  reactionDistanceLabel.html(`
+    <span class="label-left">Vertex Collisions</span>
+    <span class="label-right">${reactionDistance}</span>
+  `);
+});
+sliders.reactionDistance.parent(reactionDistanceSliderWrapper);
 
     // Section 3: INTERACTION
     let section3 = createP('INTERACTION');
@@ -306,21 +411,23 @@ sliders.amount.parent(uiContainer);
     buttonContainer1.class('button-container'); // Add the flex container class
     buttonContainer1.parent(uiContainer); // Assuming uiContainer is your main container
 
+     // Repulse Button
+    buttons.repulseButton = createButton(`
+      <span class="center-align"><•> Push</span>
+    `);
+    buttons.repulseButton.class('mediumbutton');
+    buttons.repulseButton.mousePressed(() => setBrushMode('repulse'));
+    buttons.repulseButton.parent(buttonContainer1);
+
     // Attract Button
     buttons.attractButton = createButton(`
-      <span class="center-align">>•< Attract</span>
+      <span class="center-align">>•< Pull</span>
     `);
     buttons.attractButton.class('mediumbutton');
     buttons.attractButton.mousePressed(() => setBrushMode('attract'));
     buttons.attractButton.parent(buttonContainer1);
 
-    // Repulse Button
-    buttons.repulseButton = createButton(`
-      <span class="center-align"><•> Repulse</span>
-    `);
-    buttons.repulseButton.class('mediumbutton');
-    buttons.repulseButton.mousePressed(() => setBrushMode('repulse'));
-    buttons.repulseButton.parent(buttonContainer1);
+   
 
     buttons.explode = createButton(`
       <span class="left-align">✱</span>
@@ -331,77 +438,74 @@ sliders.amount.parent(uiContainer);
     buttons.explode.mousePressed(explode);
     buttons.explode.parent(uiContainer);
 
+// Cursor Radius Slider with integrated label
+const touchRadiusSliderWrapper = createDiv('');
+touchRadiusSliderWrapper.class('slider-wrapper');
+touchRadiusSliderWrapper.parent(uiContainer);
 
-    let label2 = createP(`
-        <span class="label-left">Click Radius</span>
-        <span class="label-right">${touchRadius}</span>
-      `);
-    label2.class('text label-container');
-    label2.parent(uiContainer);
+const touchRadiusLabel = createDiv(`
+  <span class="label-left">Cursor Radius</span>
+  <span class="label-right">${touchRadius}</span>
+`);
+touchRadiusLabel.class('slider-label');
+touchRadiusLabel.parent(touchRadiusSliderWrapper);
 
-    sliders.touchRadius = createSlider(10, 200, touchRadius);
-    sliders.touchRadius.class('slider');
+sliders.touchRadius = createSlider(10, 200, touchRadius);
+sliders.touchRadius.class('slider');
+sliders.touchRadius.input(() => {
+  touchRadius = sliders.touchRadius.value();
+  touchRadiusLabel.html(`
+    <span class="label-left">Cursor Radius</span>
+    <span class="label-right">${touchRadius}</span>
+  `);
+});
+sliders.touchRadius.parent(touchRadiusSliderWrapper);
 
-    // Update label and value when the slider is moved
-    sliders.touchRadius.input(() => {
-      touchRadius = sliders.touchRadius.value();
+// Cursor Force Slider with integrated label
+const touchForceSliderWrapper = createDiv('');
+touchForceSliderWrapper.class('slider-wrapper');
+touchForceSliderWrapper.parent(uiContainer);
 
-      // Update the label with the new value of reactionDistance
-      label2.html(`
-          <span class="label-left">Click Radius</span>
-          <span class="label-right">${touchRadius}</span>
-        `);
+const touchForceLabel = createDiv(`
+  <span class="label-left">Cursor Force</span>
+  <span class="label-right">${touchForce}</span>
+`);
+touchForceLabel.class('slider-label');
+touchForceLabel.parent(touchForceSliderWrapper);
 
-    });
+sliders.touchForce = createSlider(20, 200, touchForce);
+sliders.touchForce.class('slider');
+sliders.touchForce.input(() => {
+  touchForce = sliders.touchForce.value();
+  touchForceLabel.html(`
+    <span class="label-left">Cursor Force</span>
+    <span class="label-right">${touchForce}</span>
+  `);
+});
+sliders.touchForce.parent(touchForceSliderWrapper);
 
-    sliders.touchRadius.parent(uiContainer);
+// Explosion Force Slider with integrated label
+const explosionForceSliderWrapper = createDiv('');
+explosionForceSliderWrapper.class('slider-wrapper');
+explosionForceSliderWrapper.parent(uiContainer);
 
-    elementY += sliderDist;
+const explosionForceLabel = createDiv(`
+  <span class="label-left">Explosion Force</span>
+  <span class="label-right">${explosionForce}</span>
+`);
+explosionForceLabel.class('slider-label');
+explosionForceLabel.parent(explosionForceSliderWrapper);
 
-    let label5 = createP(`
-        <span class="label-left">Click Force</span>
-        <span class="label-right">${touchForce}</span>
-      `);
-    label5.class('text label-container');
-    label5.parent(uiContainer);
-
-    sliders.touchForce = createSlider(20, 200, touchForce);
-    sliders.touchForce.class('slider');
-
-    // Update label and value when the slider is moved
-    sliders.touchForce.input(() => {
-      touchForce = sliders.touchForce.value();
-
-      // Update the label with the new value of CursorForce
-      label5.html(`
-          <span class="label-left">Click Force</span>
-          <span class="label-right">${touchForce}</span>
-        `);
-
-    });
-
-    sliders.touchForce.parent(uiContainer);
-
-
-    // Explosion Force Label
-    let label8 = createP(`
-      <span class="label-left">Explosion Force</span>
-      <span class="label-right">${explosionForce}</span>
-    `);
-    label8.class('text label-container');
-    label8.parent(uiContainer);
-
-    // Explosion Force Slider
-    sliders.explosionForce = createSlider(1, 400, explosionForce);
-    sliders.explosionForce.class('slider');
-    sliders.explosionForce.input(() => {
-      explosionForce = sliders.explosionForce.value();
-      label8.html(`
-        <span class="label-left">Explosion Force</span>
-        <span class="label-right">${explosionForce}</span>
-      `);
-    });
-    sliders.explosionForce.parent(uiContainer);
+sliders.explosionForce = createSlider(1, 400, explosionForce);
+sliders.explosionForce.class('slider');
+sliders.explosionForce.input(() => {
+  explosionForce = sliders.explosionForce.value();
+  explosionForceLabel.html(`
+    <span class="label-left">Explosion Force</span>
+    <span class="label-right">${explosionForce}</span>
+  `);
+});
+sliders.explosionForce.parent(explosionForceSliderWrapper);
 
     // Section 4: APPEARANCE
     let section4 = createP('APPEARANCE');
@@ -411,7 +515,7 @@ sliders.amount.parent(uiContainer);
     // Switch Style Button
     buttons.switchStyle = createButton(`
       <span class="left-align">✧</span>
-      <span class="center-align">Fill Style</span>
+      <span class="center-align">Fill Mode</span>
       <span class="right-align">F</span>
     `);
     buttons.switchStyle.class('button');
@@ -419,19 +523,19 @@ sliders.amount.parent(uiContainer);
     buttons.switchStyle.parent(uiContainer);
 
     // Show Vertices Button
-    buttons.spikes = createButton(`
+    buttons.dots = createButton(`
       <span class="left-align">⁙</span>
       <span class="center-align">Hide Vertices</span>
       <span class="right-align">H</span>
     `);
-    buttons.spikes.class('button');
-    buttons.spikes.mousePressed(toggleDots);
-    buttons.spikes.parent(uiContainer);
+    buttons.dots.class('button');
+    buttons.dots.mousePressed(toggleDots);
+    buttons.dots.parent(uiContainer);
 
     // Randomize Colors Button
     buttons.recolor = createButton(`
       <span class="left-align">?</span>
-      <span class="center-align">Randomize Colors</span>
+      <span class="center-align">Recolor</span>
       <span class="right-align">R</span>
     `);
     buttons.recolor.class('button');
@@ -441,39 +545,64 @@ sliders.amount.parent(uiContainer);
     // Invert Colors Button
     buttons.invertColors = createButton(`
       <span class="left-align">☯</span>
-      <span class="center-align">Black & White</span>
+      <span class="center-align">Monochrome</span>
       <span class="right-align">I</span>
     `);
     buttons.invertColors.class('button');
     buttons.invertColors.mousePressed(invertColors);
     buttons.invertColors.parent(uiContainer);
 
-    let label3 = createP(`
-      <span class="label-left">Thickness</span>
-      <span class="label-right">${strokeW}</span>
-    `);
-    label3.class('label-container');
-    label3.parent(uiContainer);
+// Stroke Width Slider with integrated label
+const strokeWSliderWrapper = createDiv('');
+strokeWSliderWrapper.class('slider-wrapper');
+strokeWSliderWrapper.parent(uiContainer);
 
-    sliders.strokeW = createSlider(1, 200, strokeW);
-    sliders.strokeW.class('slider');
-    sliders.strokeW.input(() => {
-      strokeW = sliders.strokeW.value();
-      label3.html(`
-        <span class="label-left">Thickness</span>
-        <span class="label-right">${strokeW}</span>
-      `);
-    });
-    sliders.strokeW.parent(uiContainer);
+const strokeWLabel = createDiv(`
+  <span class="label-left">Stroke Width</span>
+  <span class="label-right">${strokeW}</span>
+`);
+strokeWLabel.class('slider-label');
+strokeWLabel.parent(strokeWSliderWrapper);
 
-
-
-
+sliders.strokeW = createSlider(1, 200, strokeW);
+sliders.strokeW.class('slider');
+sliders.strokeW.input(() => {
+  strokeW = sliders.strokeW.value();
+  strokeWLabel.html(`
+    <span class="label-left">Stroke Width</span>
+    <span class="label-right">${strokeW}</span>
+  `);
+});
+sliders.strokeW.parent(strokeWSliderWrapper);
 
     // Section 5: EXPORT
     let section5 = createP('EXPORT');
     section5.class('sectionName');
     section5.parent(uiContainer);
+
+// Frames to Export Slider with integrated label
+const numFramesSliderWrapper = createDiv('');
+numFramesSliderWrapper.class('slider-wrapper');
+numFramesSliderWrapper.parent(uiContainer);
+
+const numFramesLabel = createDiv(`
+  <span class="label-left">Frames (GIF, MP4)</span>
+  <span class="label-right">${numFrames}</span>
+`);
+numFramesLabel.class('slider-label');
+numFramesLabel.parent(numFramesSliderWrapper);
+
+sliders.numFrames = createSlider(50, 500, numFrames);
+sliders.numFrames.class('slider');
+sliders.numFrames.input(() => {
+  numFrames = sliders.numFrames.value();
+  numFramesLabel.html(`
+    <span class="label-left">Frames (GIF, MP4)</span>
+    <span class="label-right">${numFrames}</span>
+  `);
+  gifDuration = numFrames;
+});
+sliders.numFrames.parent(numFramesSliderWrapper);
 
     let buttonContainer2 = createDiv();
     buttonContainer2.class('button-container'); // Add the flex container class
@@ -481,7 +610,7 @@ sliders.amount.parent(uiContainer);
 
     // PNG Button
     buttons.sPNG = createButton(`
-      <span class="center-align">.png</span>
+      <span class="center-align">PNG</span>
     `);
     buttons.sPNG.class('smallbutton');
     buttons.sPNG.mousePressed(savePNG);
@@ -489,7 +618,7 @@ sliders.amount.parent(uiContainer);
 
     // SVG Button
     buttons.sSVG = createButton(`
-      <span class="center-align">.svg</span>
+      <span class="center-align">SVG</span>
     `);
     buttons.sSVG.class('smallbutton');
     buttons.sSVG.mousePressed(copyAndSaveSVG);
@@ -497,7 +626,7 @@ sliders.amount.parent(uiContainer);
 
     // GIF Button
     buttons.sGIF = createButton(`
-      <span class="center-align">.gif</span>
+      <span class="center-align">GIF</span>
     `);
     buttons.sGIF.class('smallbutton');
     buttons.sGIF.mousePressed(recordGIF);
@@ -505,10 +634,10 @@ sliders.amount.parent(uiContainer);
 
     // MP4 Button
     buttons.sMP4 = createButton(`
-      <span class="center-align">.mp4</span>
+      <span class="center-align">MP4</span>
     `);
     buttons.sMP4.class('smallbutton');
-    buttons.sMP4.mousePressed(() => recording = true);
+    buttons.sMP4.mousePressed(startMP4Recording);
     buttons.sMP4.parent(buttonContainer2);
 
 
@@ -714,22 +843,50 @@ function explode() {
   }
 }
 function recolor() {
-  // Random background color
-  bgColor = color(random(255), random(255), random(255));
-  edgeColor = color(random(255), random(255), random(255));
+  // Helper: calculate perceived brightness (luminance) of a color
+  function getBrightness(c) {
+    const r = red(c) / 255;
+    const g = green(c) / 255;
+    const b = blue(c) / 255;
+    // WCAG luminance formula
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
 
-  // Random fill color for the blob
-  fillColor = color(random(255), random(255), random(255));
-  // Random stroke color for the blob
-  strokeColor = color(random(255), random(255), random(255));
+  // Helper: generate random color and ensure minimum brightness difference
+  function getRandomColorWithConstraint(otherColors, minDifference = 0.3) {
+    let newColor;
+    let valid = false;
+    let attempts = 0;
+    while (!valid && attempts < 20) {
+      newColor = color(random(255), random(255), random(255));
+      const newBrightness = getBrightness(newColor);
+      
+      // Check if this color differs enough from all existing colors
+      valid = otherColors.every(otherColor => {
+        const otherBrightness = getBrightness(otherColor);
+        return Math.abs(newBrightness - otherBrightness) >= minDifference;
+      });
+      
+      attempts++;
+    }
+    return newColor;
+  }
+
+  // Pick background color first
+  bgColor = color(random(255), random(255), random(255));
+  
+  // Fill color must contrast with background (minimum 0.35 difference)
+  fillColor = getRandomColorWithConstraint([bgColor], 0.35);
+  
+  // Stroke/edge color should differ from both background and fill
+  edgeColor = getRandomColorWithConstraint([bgColor, fillColor], 0.3);
+  
   guiTextColor = 'white';
   cursorColor = 'white';
 }
-function invertColors() {
-  guiTextColor = (fillColor === 'white') ? 'grey' : 'white';
+function invertColors() { 
   bgColor = (bgColor === 'black') ? 'white' : 'black';
   fillColor = (fillColor === 'white') ? 'black' : 'white';
-  cursorColor = 'red';
 }
 function savePNG() {
   save(createFileName('uglyph', 'png'));
@@ -766,8 +923,34 @@ function copyAndSaveSVG() {
     const mode = shp.fillMode || fillMode;
 
     let path = document.createElementNS(svgNS, 'path');
-    let d = shp.points.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${pt.x + centerX} ${pt.y + centerY}`).join(' ');
-    d += ' Z';
+    let d = '';
+
+    // Handle shapes with contours (outer + holes) using proper SVG path syntax
+    if (shp.contours && shp.contours.length > 0) {
+      for (let ci = 0; ci < shp.contours.length; ci++) {
+        const c = shp.contours[ci];
+        const offset = c.offset;
+        const len = c.length;
+        
+        // Start new subpath
+        for (let i = 0; i < len; i++) {
+          const pt = shp.points[offset + i];
+          const cmd = (i === 0) ? 'M' : 'L';
+          d += `${cmd} ${pt.x + centerX} ${pt.y + centerY} `;
+        }
+        d += 'Z '; // Close subpath
+      }
+      
+      // Use evenodd fill-rule so inner contours create holes
+      if (mode === "filled") {
+        path.setAttribute('fill-rule', 'evenodd');
+      }
+    } else {
+      // Legacy single-ring path (no contours)
+      d = shp.points.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${pt.x + centerX} ${pt.y + centerY}`).join(' ');
+      d += ' Z';
+    }
+
     path.setAttribute('d', d);
 
     if (mode === "filled") {
@@ -777,9 +960,6 @@ function copyAndSaveSVG() {
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', colorToString(fillColor));
       path.setAttribute('stroke-width', strokeW);
-    } else if (mode === "filled") {
-      path.setAttribute('fill', colorToString(fillColor));
-      path.setAttribute('stroke', 'none');
     }
     svg.appendChild(path);
 
@@ -802,8 +982,32 @@ function copyAndSaveSVG() {
   saveBlob(svgBlob, createFileName('uglyph', 'svg'));
 }
 function recordGIF() {
-  saveGif('uglyph.gif', gifDuration, { units: 'frames', notificationDuration: 1, notificationID: 'customProgressBar' });
-
+  console.log('Starting GIF recording...');
+  recordingGif = true;
+  gifRendering = false;
+  showDoneMessage = false; // Clear any previous done message
+  gifStartFrame = frameCount; // Track when GIF recording started
+  
+  saveGif('uglyph.gif', numFrames, { 
+    units: 'frames',
+    silent: true // Hide p5's default notifications
+  }).then(() => {
+    // This callback fires when GIF is completely done (after rendering)
+    console.log('GIF save complete (callback fired), showing done message');
+    recordingGif = false;
+    gifRendering = false;
+    // Cursor already restored when rendering started
+    // Show "Done!" message
+    showDoneMessage = true;
+    doneMessageStartFrame = frameCount;
+  }).catch(err => {
+    console.error('GIF save error:', err);
+    recordingGif = false;
+    gifRendering = false;
+  });
+  
+  // After recording frames are captured, show "Rendering..." during encoding
+  // We'll detect this in draw() when frames reach numFrames
 }
 function saveBlob(blob, fileName) {
   let link = document.createElement('a');
@@ -857,7 +1061,7 @@ function reloadWindow() {
     if (sliders && sliders.amount) {
       sliders.amount.value(amount);
       if (label4) label4.html(`
-        <span class="label-left">Complexity</span>
+        <span class="label-left">Vertex Count</span>
         <span class="label-right">${amount}</span>
       `);
       resampleTotal(amount);
@@ -869,12 +1073,57 @@ function toggleDots() {
 }
 function draw() {
 
+  // Update recording status in header (check in priority order)
+  if (showDoneMessage) {
+    // Show "Done!" for 90 frames (highest priority - overrides everything)
+    if (frameCount - doneMessageStartFrame < 90) {
+      label1.html(`
+        <span class="label-left">UGLYPH v1.0</span>
+        <span class="label-right" style="color: #00FF2F;">Done!</span>
+      `);
+    } else {
+      // Clear done message after 90 frames
+      showDoneMessage = false;
+      label1.html(`
+        <span class="label-left">UGLYPH v1.0</span>
+        <span class="label-right"></span>
+      `);
+    }
+  } else if (gifRendering && !showDoneMessage) {
+    // GIF is rendering (only show if not done yet)
+    label1.html(`
+      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-right" style="color: orange;">Rendering...</span>
+    `);
+  } else if (recording || recordingGif) {
+    let currentFrames;
+    if (recording) {
+      currentFrames = recordedFrames;
+    } else {
+      // For GIF, calculate frames since recording started
+      currentFrames = Math.min(frameCount - gifStartFrame, numFrames);
+      
+      // When GIF reaches target frames, switch to rendering state
+      if (currentFrames >= numFrames && recordingGif && !gifRendering) {
+        gifRendering = true;
+      }
+    }
+    label1.html(`
+      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-right" style="color: red;">${currentFrames} / ${numFrames} ●</span>
+    `);
+  } else if (label1) {
+    label1.html(`
+      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-right"></span>
+    `);
+  }
 
   // Sync some UI state labels (existing code left intact)
   if (shouldMutate !== prevShouldMutate) {
     buttons.mutation.html(`
       <span class="left-align">${shouldMutate ? '■' : '▶'}</span>
-      <span class="center-align">${shouldMutate ? 'Stop' : 'Start'}</span>
+      <span class="center-align">${shouldMutate ? 'Relax' : 'Mutate'}</span>
       <span class="right-align">M</span>`);
     prevShouldMutate = shouldMutate;
   }
@@ -886,16 +1135,16 @@ function draw() {
   } else {
     buttons.freeze.html(` 
     <span class="left-align">⏸</span>
-    <span class="center-align">Freezed</span>
+    <span class="center-align">Unfreeze</span>
     <span class="right-align">Space</span>`);
   }
   if (showDots === false) {
-    buttons.spikes.html(`
+    buttons.dots.html(`
     <span class="left-align">⁙</span>
     <span class="center-align">Show Vertices</span>
     <span class="right-align">H</span>`);
   } else {
-    buttons.spikes.html(`
+    buttons.dots.html(`
   <span class="left-align">⁙</span>
   <span class="center-align">Hide Vertices</span>
   <span class="right-align">H</span> `)
@@ -913,8 +1162,8 @@ function draw() {
     stroke(fillColor);
   }
 
-  // Run mutation (which updates shapes)
-   if (smoothingEnabled) {
+  // Run mutation (which updates shapes) - skip during GIF rendering
+   if (smoothingEnabled && !gifRendering) {
     mutation();
 
     // per-shape smoothing: operate per-contour (contours are independent closed rings)
@@ -1025,8 +1274,8 @@ function draw() {
       pop();
     }
 
-  // Mouse interaction: apply attract/repulse to all shapes' points
-  if (mouseIsPressed === true) {
+  // Mouse interaction: apply attract/repulse to all shapes' points - skip during GIF rendering
+  if (mouseIsPressed === true && !gifRendering) {
     for (let s = 0; s < shapes.length; s++) {
       const shp = shapes[s];
       for (let i = 0; i < shp.points.length; i++) {
@@ -1040,45 +1289,70 @@ function draw() {
     }
   }
 
-  // Draw cursor preview
-  fill(255, 255, 255, 255);
-  noStroke();
-  fill(100, 100, 100, 75);
-  circle(mouseX - width / 2, mouseY - height / 2, touchRadius * 2);
-  if (mouseIsPressed === true) {
-    fill(guiTextColor);
-    circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6);
+  // Draw cursor preview (hide during recording)
+  if (!recording && !recordingGif) {
+    fill(255, 255, 255, 255);
+    noStroke();
+    fill(100, 100, 100, 75);
+    circle(mouseX - width / 2, mouseY - height / 2, touchRadius * 2);
+    if (mouseIsPressed === true) {
+      fill(guiTextColor);
+      circle(mouseX - width / 2, mouseY - height / 2, touchRadius / 1.6);
+    }
   }
 
-  // theme toggles
-  if (bgColor === 'white') {
-    document.body.classList.add('light-theme');
-    document.body.classList.remove('dark-theme');
-  } else {
-    document.body.classList.add('dark-theme');
-    document.body.classList.remove('light-theme');
+  // Show/hide rendering overlay via HTML element
+  const renderOverlay = document.getElementById('render-overlay');
+  if (renderOverlay) {
+    renderOverlay.style.display = gifRendering ? 'block' : 'none';
   }
 
-  // recording handling (existing code kept)
-  if (recording) {
-    console.log('recording');
+  // Show/hide recording border on canvas container (only during recording, not rendering)
+  const canvasContainer = document.getElementById('canvas-container');
+  if (canvasContainer) {
+    if ((recording || recordingGif) && !gifRendering) {
+      canvasContainer.style.border = '5px solid red';
+    } else {
+      canvasContainer.style.border = 'none';
+    }
+  }
+
+  // // theme toggles
+  // if (bgColor === 'white') {
+  //   document.body.classList.add('light-theme');
+  //   document.body.classList.remove('dark-theme');
+  // } else {
+  //   document.body.classList.add('dark-theme');
+  //   document.body.classList.remove('light-theme');
+  // }
+
+  // recording handling
+  if (recording && recordedFrames < numFrames) {
     recordVideo();
   }
 
-  if (recordedFrames === numFrames) {
+  if (recordedFrames >= numFrames && recording) {
     recording = false;
-    recordedFrames = 0;
-    console.log('recording stopped');
+    console.log('Recording complete, finalizing...');
 
-    encoder.finalize();
-    const uint8Array = encoder.FS.readFile(encoder.outputFilename);
-    const anchor = document.createElement('a');
-    anchor.href = URL.createObjectURL(new Blob([uint8Array], { type: 'video/mp4' }));
-    anchor.download = encoder.outputFilename;
-    anchor.click();
-    encoder.delete();
-
-    resetEncoder(); // reinitialize encoder
+    try {
+      encoder.finalize();
+      const uint8Array = encoder.FS.readFile(encoder.outputFilename);
+      const anchor = document.createElement('a');
+      anchor.href = URL.createObjectURL(new Blob([uint8Array], { type: 'video/mp4' }));
+      anchor.download = createFileName('uglyph', 'mp4');
+      anchor.click();
+      console.log('MP4 downloaded successfully');
+      
+      // Show "Done!" message for 90 frames
+      showDoneMessage = true;
+      doneMessageStartFrame = frameCount;
+    } catch (err) {
+      console.error('Error finalizing video:', err);
+    } finally {
+      recordedFrames = 0;
+      resetEncoder(); // reinitialize encoder for next recording
+    }
   }
 }
 function createSpatialGrid(points, cellSize) {

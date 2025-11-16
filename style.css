@@ -56,6 +56,8 @@ canvas {
     overflow: hidden;
     margin-left: 0;
     width: 100%;
+    position: relative; /* Needed for absolute positioned overlay inside */
+    box-sizing: border-box; /* Include border in dimensions */
 
 }
 
@@ -103,8 +105,34 @@ canvas {
     width: 200px;
     margin-bottom: 0;
     padding-bottom: 2px;
-    /* Explicitly set margin to 0 */
+}
 
+.label-container:not(:first-child) {
+    display: none; /* Hide label containers except the first one (label1) */
+}
+
+.slider-wrapper {
+    position: relative;
+    width: 200px;
+    margin: 3px 0;
+    height: 32px;
+}
+
+.slider-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    pointer-events: none;
+    z-index: 2;
+    font: 10px monospace, monospace;
+    color: white;
+    box-sizing: border-box;
 }
 
 
@@ -138,8 +166,16 @@ a {
     text-decoration: none;
     cursor: pointer;
     border-radius: 0;
+    outline: none; /* Remove focus outline */
 }
 
+.slider:focus,
+.button:focus,
+.smallbutton:focus,
+.mediumbutton:focus,
+input[type=range]:focus {
+    outline: none; /* Prevent focus highlight on all UI elements */
+}
 
 .button,
 .smallbutton,
@@ -208,49 +244,83 @@ a {
 
 input[type=range] {
     -webkit-appearance: none;
+    appearance: none;
     width: 200px;
+    height: 32px;
     background: #000;
-    margin: 3px 0;
-
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    overflow: hidden; /* Clip the box-shadow overflow */
 }
 
 input[type=range]:focus {
     outline: none;
 }
 
-input[type=range]::-webkit-slider-runnable-track,
-input[type=range]::-moz-range-track,
-input[type=range]::-ms-fill-lower,
-input[type=range]::-ms-fill-upper {
-    height: 16px;
+input[type=range]::-webkit-slider-runnable-track {
+    height: 32px;
     background: #000;
     cursor: pointer;
     border-radius: 0;
 }
 
-/* Chrome specific range input thumb */
+input[type=range]::-moz-range-track {
+    height: 32px;
+    background: #000;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+input[type=range]::-ms-fill-lower,
+input[type=range]::-ms-fill-upper {
+    height: 32px;
+    background: #000;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+/* Chrome/Safari - progress bar fill using box-shadow trick */
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    height: 16px;
-    width: 16px;
-    background: #ffffff;
+    height: 32px;
+    width: 1px;
+    background: transparent;
     cursor: pointer;
     border-radius: 0;
-    border: 0px solid #000;
-
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
+    position: relative;
 }
 
-input[type=range]::-moz-range-thumb,
+/* Firefox - progress bar fill */
+input[type=range]::-moz-range-thumb {
+    appearance: none;
+    height: 32px;
+    width: 1px;
+    background: transparent;
+    cursor: pointer;
+    border: none;
+    border-radius: 0;
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
+}
+
 input[type=range]::-ms-thumb {
     appearance: none;
-    height: 16px;
-    width: 16px;
-    background: #fff;
+    height: 32px;
+    width: 1px;
+    background: transparent;
     cursor: pointer;
-    border: 0px solid #000;
+    border: none;
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
 }
 
+/* Firefox specific - fill the lower part of track */
+input[type=range]::-moz-range-progress {
+    background-color: rgba(255, 255, 255, 0.5);
+    height: 32px;
+}
 
 
 /*SCROLLBAR*/
@@ -298,6 +368,22 @@ input[type=range]::-ms-thumb {
     flex-direction: column;
     align-items: center;
     gap: 8px;
+}
+
+#render-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(186, 186, 186, 0.3);
+    /* #BABABA at 30% opacity */
+    pointer-events: none;
+    /* allow clicks to pass through */
+    z-index: 9998;
+    /* above canvas, below watermark */
+    display: none;
+    /* hidden by default */
 }
 
 #credits-text {

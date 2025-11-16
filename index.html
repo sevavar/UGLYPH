@@ -10,7 +10,15 @@
   </head>
   <body>
     <div id="ui-container"></div>
-    <div id="canvas-container"></div>
+    <div id="canvas-container">
+      <div id="render-overlay"></div>
+    </div>
+     <div id="watermark-wrap" aria-hidden="false">
+    <div id="credits-text">BY <a href="http://www.instagram.com/sevavar" target="_blank">SEVA VARFOLOMEEV</a> / <a href="http://www.retry.studio" target="_blank">RETRY STUDIO</a></div>
+    <a id="watermark-link" href="https://retry.studio" target="_blank" rel="noopener">
+      <img id="watermark" src="./watermark.svg" alt="Retry Studio" data-opacity="0.2">
+    </a>
+  </div>
     <script src="sketch.js"></script>
   </body>
 </html>
