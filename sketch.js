@@ -209,13 +209,16 @@ function createUI() {
     `);
     buttons.uploadSVG.class('button');
     buttons.uploadSVG.mousePressed(() => {
-      // Create hidden file input
+      // Create hidden file input (Safari requires it to be in DOM)
       let input = document.createElement('input');
       input.type = 'file';
-      input.accept = '.svg,image/svg+xml';
+      input.accept = '.svg';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      
       input.onchange = (e) => {
         let file = e.target.files[0];
-        if (file && file.type === 'image/svg+xml') {
+        if (file) {
           let reader = new FileReader();
           reader.onload = (event) => {
             // Create p5.js-compatible file object
@@ -226,10 +229,20 @@ function createUI() {
               name: file.name
             };
             handleFileDrop(p5File);
+            // Clean up
+            document.body.removeChild(input);
           };
-          reader.readAsDataURL(file); // Read as data URL to match p5 drop format
+          reader.onerror = () => {
+            console.error('Error reading file');
+            document.body.removeChild(input);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          document.body.removeChild(input);
         }
       };
+      
+      // Trigger click
       input.click();
     });
     buttons.uploadSVG.parent(uiContainer);
