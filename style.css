@@ -90,6 +90,7 @@ canvas {
     opacity: 0.4;
     font-size: 10px;
     padding-top: 8px;
+    margin-bottom: 4px;
 
 }
 
@@ -111,10 +112,35 @@ canvas {
     display: none; /* Hide label containers except the first one (label1) */
 }
 
+.text-input-wrapper {
+    width: 200px;
+    margin: 3px 0;
+}
+
+.text-input {
+    width: 200px;
+    height: 32px;
+    background-color: #000;
+    color: white;
+    border: none;
+    font: 10px monospace, monospace;
+    padding: 0 10px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.text-input::placeholder {
+    color: #666;
+}
+
+.text-input:focus {
+    background-color: #222;
+}
+
 .slider-wrapper {
     position: relative;
     width: 200px;
-    margin: 3px 0;
+    margin: 4px 0;
     height: 32px;
 }
 
@@ -154,13 +180,78 @@ a {
     width: 50px;
 }
 
+.export-button-row {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    margin: 4px 0;
+    gap: 4px;
+}
+
+.export-button {
+    width: 98px;
+    height: 32px;
+    background-color: #000;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 10px monospace, monospace;
+    outline: none;
+}
+
+.export-button:hover {
+    background-color: #BABABA;
+}
+
+.export-button:active {
+    background-color: #fff;
+    color: #000;
+}
+.icon-button-container {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    margin: 4px 0;
+    gap: 4px;
+}
+
+.icon-button {
+    width: 64px;
+    height: 64px;
+    background-color: #000;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    outline: none;
+}
+
+.icon-button:hover {
+    background-color: #BABABA;
+}
+
+.icon-button:active {
+    background-color: #fff;
+}
+
+.button-icon {
+    width: 30px;
+    height: 30px;
+    display: block;
+    pointer-events: none;
+}
 
 .slider,
 .button,
 .smallbutton,
 .mediumbutton {
     display: block;
-    margin: 3px 0;
+    margin: 4px 0;
     font: 10px monospace, monospace;
     text-align: center;
     text-decoration: none;
