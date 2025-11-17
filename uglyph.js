@@ -1100,13 +1100,6 @@ function createFileName(prefix, extension) {
   return `${prefix}_${datePart}${timePart}.${extension}`;
 }
 function reloadWindow() {
-  // Check if text input is empty - if so, clear importedShapes and load default SVG
-  if (textInput && textInput.value().trim().length === 0) {
-    importedShapes = null;
-    importDefaultSVG();
-    return;
-  }
-  
   if (importedShapes && importedShapes.length > 0) {
     // restore imported shapes (deep copy), including contours but DO NOT override current global fillMode
     shapes = importedShapes.map(s => ({
@@ -1135,7 +1128,9 @@ function reloadWindow() {
       }
     }
   } else {
-    generateShape();
+    // No imported shapes - load default SVG
+    importDefaultSVG();
+    return;
   }
 
   // Keep compatibility aliases for UI & code using points/velocities
@@ -1972,9 +1967,15 @@ function handleFileDrop(file) {
         return { points: pts, velocities: vels, contours: s.contours, fillMode: fillMode };
       });
 
+      // Reset appliedScale for fresh imports (before applying scale)
+      const isReload = (importedShapes !== null);
+      if (!isReload) {
+        appliedScale = 1;
+      }
+      
       // apply cumulative user scale so imported shapes preserve user's Size slider state
       // Only apply if we're reloading an existing import, not on fresh import
-      if (appliedScale !== 1 && importedShapes !== null) {
+      if (appliedScale !== 1 && isReload) {
         for (let s = 0; s < shapes.length; s++) {
           const shp = shapes[s];
           for (let i = 0; i < shp.points.length; i++) {
@@ -1982,11 +1983,6 @@ function handleFileDrop(file) {
             shp.points[i].y *= appliedScale;
           }
         }
-      }
-      
-      // Reset appliedScale for fresh imports
-      if (importedShapes === null) {
-        appliedScale = 1;
       }
 
       // store imported shapes for reload (include contours & fillMode)
