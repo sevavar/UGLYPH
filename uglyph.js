@@ -64,6 +64,7 @@ let currentWidth, currentHeight;
 
 let header; // Global label reference for header with recording status
 let vertexLabel; // Global label reference for vertex count slider
+let textInput; // Global reference for text input field
 let appliedScale = 1;
 
 
@@ -93,8 +94,9 @@ function initEncoder() {
   return HME.createH264MP4Encoder().then(enc => {
     encoder = enc;
     encoder.outputFilename = 'uglyph.mp4';
-    encoder.width = width;  // Use p5.js width (not canvas.width which may include pixel density)
-    encoder.height = height; // Use p5.js height
+    // Ensure dimensions are multiples of 2 (required by H264 encoder)
+    encoder.width = Math.floor(width / 2) * 2;  // Round down to nearest even number
+    encoder.height = Math.floor(height / 2) * 2; // Round down to nearest even number
     encoder.frameRate = frate;
     encoder.kbps = 80000; // Video quality
     encoder.groupOfPictures = 10; // Lower for fast actions
@@ -134,11 +136,15 @@ function startMP4Recording() {
   const actualWidth = width * density;
   const actualHeight = height * density;
   
+  // Ensure dimensions are multiples of 2 (required by H264 encoder)
+  const evenWidth = Math.floor(actualWidth / 2) * 2;
+  const evenHeight = Math.floor(actualHeight / 2) * 2;
+  
   HME.createH264MP4Encoder().then(enc => {
     encoder = enc;
     encoder.outputFilename = 'uglyph.mp4';
-    encoder.width = actualWidth;
-    encoder.height = actualHeight;
+    encoder.width = evenWidth;
+    encoder.height = evenHeight;
     encoder.frameRate = frate;
     encoder.kbps = 80000;
     encoder.groupOfPictures = 10;
@@ -164,16 +170,20 @@ function recordVideo() {
   const actualWidth = width * density;
   const actualHeight = height * density;
   
+  // Use the same even dimensions as encoder (round down to nearest even number)
+  const evenWidth = Math.floor(actualWidth / 2) * 2;
+  const evenHeight = Math.floor(actualHeight / 2) * 2;
+  
   // Verify dimensions match
-  if (encoder.width !== actualWidth || encoder.height !== actualHeight) {
-    console.error(`Dimension mismatch! Encoder: ${encoder.width}x${encoder.height}, Canvas: ${actualWidth}x${actualHeight} (density: ${density})`);
+  if (encoder.width !== evenWidth || encoder.height !== evenHeight) {
+    console.error(`Dimension mismatch! Encoder: ${encoder.width}x${encoder.height}, Expected: ${evenWidth}x${evenHeight} (density: ${density})`);
     recording = false;
     return;
   }
   
-  // Capture current canvas frame at actual pixel resolution
+  // Capture current canvas frame at even pixel resolution
   const ctx = canvas.elt.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, actualWidth, actualHeight);
+  const imageData = ctx.getImageData(0, 0, evenWidth, evenHeight);
   
   // Add frame to encoder
   encoder.addFrameRgba(imageData.data);
@@ -204,7 +214,7 @@ function createUI() {
     textInputWrapper.class('text-input-wrapper');
     textInputWrapper.parent(uiContainer);
 
-    let textInput = createInput('');
+    textInput = createInput('');
     textInput.attribute('placeholder', 'Your text here...');
     textInput.class('text-input');
     textInput.input(() => {
@@ -215,6 +225,12 @@ function createUI() {
         smoothingEnabled = false;
         // Convert text to SVG and load it
         convertTextToSVG(inputText);
+      } else {
+        // Clear the canvas when input is empty
+        shapes = [];
+        points = [];
+        velocities = [];
+        amount = 0;
       }
     });
     textInput.parent(textInputWrapper);
@@ -1084,6 +1100,13 @@ function createFileName(prefix, extension) {
   return `${prefix}_${datePart}${timePart}.${extension}`;
 }
 function reloadWindow() {
+  // Check if text input is empty - if so, clear importedShapes and load default SVG
+  if (textInput && textInput.value().trim().length === 0) {
+    importedShapes = null;
+    importDefaultSVG();
+    return;
+  }
+  
   if (importedShapes && importedShapes.length > 0) {
     // restore imported shapes (deep copy), including contours but DO NOT override current global fillMode
     shapes = importedShapes.map(s => ({
@@ -1606,7 +1629,7 @@ let fontLoaded = false;
 // Try to load font on page load
 if (typeof opentype !== 'undefined') {
   // Load local font file
-  const fontUrl = './fonts/Synthax-Light.woff';
+  const fontUrl = './fonts/texgyreheros-bold.otf';
   
   console.log('Starting font load from:', fontUrl);
   
@@ -1950,7 +1973,8 @@ function handleFileDrop(file) {
       });
 
       // apply cumulative user scale so imported shapes preserve user's Size slider state
-      if (appliedScale !== 1) {
+      // Only apply if we're reloading an existing import, not on fresh import
+      if (appliedScale !== 1 && importedShapes !== null) {
         for (let s = 0; s < shapes.length; s++) {
           const shp = shapes[s];
           for (let i = 0; i < shp.points.length; i++) {
@@ -1958,6 +1982,11 @@ function handleFileDrop(file) {
             shp.points[i].y *= appliedScale;
           }
         }
+      }
+      
+      // Reset appliedScale for fresh imports
+      if (importedShapes === null) {
+        appliedScale = 1;
       }
 
       // store imported shapes for reload (include contours & fillMode)

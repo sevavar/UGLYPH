@@ -1,26 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.min.js"></script>
-    <script src="https://unpkg.com/h264-mp4-encoder/embuild/dist/h264-mp4-encoder.web.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <meta charset="utf-8" name="viewport" content="width=device-width">
-    
-  </head>
-  <body>
-    <div id="ui-container"></div>
-    <div id="canvas-container">
-      <div id="render-overlay"></div>
-    </div>
-     <div id="watermark-wrap" aria-hidden="false">
-    <div id="credits-text">BY <a href="http://www.instagram.com/sevavar" target="_blank">SEVA VARFOLOMEEV</a> / <a href="http://www.retry.studio" target="_blank">RETRY STUDIO</a></div>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.dom.min.js"></script>
+  <script src="https://unpkg.com/h264-mp4-encoder/embuild/dist/h264-mp4-encoder.web.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <meta charset="utf-8" name="viewport" content="width=device-width">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https:uglyph.xyz">
+  <meta property="og:title" content="UGLYPH">
+  <meta property="og:description" content="Mutant Typography Generator">
+  <meta property="og:image" content="https://sevavar.github.io/uglyph/assets/og-image.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UGLYPH">
+  <meta name="twitter:description" content="Mutant Typography Generator">
+  <meta name="twitter:image" content="https://sevavar.github.io/uglyph/assets/og-image.png">
+
+</head>
+
+<body>
+  <div id="ui-container"></div>
+  <div id="canvas-container">
+    <div id="render-overlay"></div>
+  </div>
+  <div id="watermark-wrap" aria-hidden="false">
+    <!--<div id="credits-text">BY <a href="http://www.instagram.com/sevavar" target="_blank">SEVA VARFOLOMEEV</a> / <a href="http://www.retry.studio" target="_blank">RETRY STUDIO</a></div>-->
     <a id="watermark-link" href="https://retry.studio" target="_blank" rel="noopener">
       <img id="watermark" src="./assets/watermark.svg" alt="Retry Studio" data-opacity="0.2">
     </a>
   </div>
-    <script src="uglyph.js"></script>
-  </body>
-</html>
+  <script src="uglyph.js"></script>
+</body>
 
+</html>
