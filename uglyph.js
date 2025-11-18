@@ -1,4 +1,5 @@
 
+let version = "UGLYPH v1.01"
 
 let shapes = []; // Each item: { points: [{x,y},...], velocities: [{vx,vy},...] }
 let importedShapes = null; // store for reload/reset
@@ -590,10 +591,10 @@ sliders.explosionForce.parent(explosionForceSliderWrapper);
     buttons.switchStyle.mousePressed(toggleFillMode);
     buttons.switchStyle.parent(uiContainer);
 
-    // Show Vertices Button
+    // Show Dots Button
     buttons.dots = createButton(`
       <span class="left-align">⁙</span>
-      <span class="center-align">Hide Vertices</span>
+      <span class="center-align">Show Dots</span>
       <span class="right-align">H</span>
     `);
     buttons.dots.class('button');
@@ -814,6 +815,8 @@ function keyPressed() {
   switch (keyCode) {
     case 65: // 'A'
       toggleAttractionRepulsion();
+      // Update button states to show the newly active mode
+      updateButtonStates();
       break;
     case 66: // 'B'
       toggleShapeType();
@@ -839,6 +842,7 @@ function keyPressed() {
       break;
     case 80: // 'P'
       savePNG();
+      animateButtonClick(buttons.sPNG);
       break;
     case 68: // 'D'
       //toggleDots();
@@ -846,43 +850,78 @@ function keyPressed() {
       break;
     case 70: // 'F'
       toggleFillMode();
+      animateButtonClick(buttons.switchStyle);
       break;
     //case 72: // 'H'
     //toggleTextGUI();
     //break;
     case 73: // 'I'
-      invertColors(); break;
+      invertColors();
+      animateButtonClick(buttons.invertColors);
+      break;
     case 77: // 'M'
       toggleMutation();
-      //toggleSmoothing();
+      animateButtonClick(buttons.stop);
       break;
     case 88: // 'X'
-      explode(); break;
+      explode();
+      animateButtonClick(buttons.explode);
+      break;
     case 71: // 'G'
-      recordGIF(); break;
+      recordGIF();
+      animateButtonClick(buttons.sGIF);
+      break;
     case 83: // 'S'
       copyAndSaveSVG();
+      animateButtonClick(buttons.sSVG);
       break;
     case 86: //'V'
       recording = true;
+      animateButtonClick(buttons.sMP4);
       break;
     case 72: // 'H'
       toggleDots();
+      animateButtonClick(buttons.dots);
       break;
     case 72: // 'H'
       //showUI = false;
       break;
     case 82: // 'R'
       recolor();
+      animateButtonClick(buttons.recolor);
       break;
     case 27: // 'Esc'
       reloadWindow();
+      animateButtonClick(buttons.reload);
       break;
     case 32: // 'Space'
       toggleSmoothing();
+      animateButtonClick(buttons.playPause);
       event.preventDefault(); // This prevents scrolling
       break;
   }
+}
+
+// Simulate button click animation when keyboard shortcut is pressed
+function animateButtonClick(button) {
+  if (!button) return;
+  
+  // Get the button element (it's a p5.Element, so access the DOM element)
+  const btnElement = button.elt;
+  
+  // Store original styles
+  const originalBg = btnElement.style.backgroundColor;
+  const originalColor = btnElement.style.color;
+  
+  // Apply active state styles
+  btnElement.style.backgroundColor = '#fff';
+  btnElement.style.color = '#000';
+  
+  // Restore original styles after 100ms
+  setTimeout(() => {
+    btnElement.style.backgroundColor = originalBg;
+    btnElement.style.color = originalColor;
+  }, 100);
 }
 function toggleSmoothing() {
   smoothingEnabled = !smoothingEnabled;
@@ -1150,6 +1189,21 @@ function reloadWindow() {
 }
 function toggleDots() {
   showDots = (showDots === true) ? false : true;
+  
+  // Update button text
+  if (showDots) {
+    buttons.dots.html(`
+      <span class="left-align">⁙</span>
+      <span class="center-align">Hide Dots</span>
+      <span class="right-align">H</span>
+    `);
+  } else {
+    buttons.dots.html(`
+      <span class="left-align">⁙</span>
+      <span class="center-align">Show Dots</span>
+      <span class="right-align">H</span>
+    `);
+  }
 }
 function draw() {
 
@@ -1158,21 +1212,21 @@ function draw() {
     // Show "Done!" for 90 frames (highest priority - overrides everything)
     if (frameCount - doneMessageStartFrame < 90) {
       header.html(`
-        <span class="label-left">UGLYPH v1.0</span>
+        <span class="label-left">${version}</span>
         <span class="label-right" style="color: #00FF2F;">Done!</span>
       `);
     } else {
       // Clear done message after 90 frames
       showDoneMessage = false;
       header.html(`
-        <span class="label-left">UGLYPH v1.0</span>
+        <span class="label-left">${version}</span>
         <span class="label-right"></span>
       `);
     }
   } else if (gifRendering && !showDoneMessage) {
     // GIF is rendering (only show if not done yet)
     header.html(`
-      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-left">${version}</span>
       <span class="label-right" style="color: orange;">Rendering...</span>
     `);
   } else if (recording || recordingGif) {
@@ -1189,12 +1243,12 @@ function draw() {
       }
     }
     header.html(`
-      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-left">${version}</span>
       <span class="label-right" style="color: red;">${currentFrames} / ${numFrames} ●</span>
     `);
   } else if (header) {
     header.html(`
-      <span class="label-left">UGLYPH v1.0</span>
+      <span class="label-left">${version}</span>
       <span class="label-right"></span>
     `);
   }
