@@ -1,5 +1,5 @@
 
-let version = "UGLYPH v1.01"
+let version = "UGLYPH v1.02"
 
 let shapes = []; // Each item: { points: [{x,y},...], velocities: [{vx,vy},...] }
 let importedShapes = null; // store for reload/reset
@@ -86,6 +86,9 @@ let frameCounter = 0;
 let recordingGif = false;
 let gifStartFrame = 0;
 let gifRendering = false;
+
+// PNG export
+let savingPNG = false;
 
 // Recording status states
 let showDoneMessage = false;
@@ -1006,7 +1009,10 @@ function invertColors() {
   fillColor = (fillColor === 'white') ? 'black' : 'white';
 }
 function savePNG() {
+  savingPNG = true;
+  redraw();
   save(createFileName('uglyph', 'png'));
+  savingPNG = false;
 }
 function copyAndSaveSVG() {
   // Build an SVG that contains one path per shape (keeps original relative positions)
@@ -1401,8 +1407,8 @@ function draw() {
     }
   }
 
-  // Draw cursor preview (hide during recording)
-  if (!recording && !recordingGif) {
+  // Draw cursor preview (hide during recording and PNG export)
+  if (!recording && !recordingGif && !savingPNG) {
     fill(255, 255, 255, 255);
     noStroke();
     fill(100, 100, 100, 75);

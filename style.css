@@ -456,9 +456,9 @@ input[type=range]::-moz-range-progress {
     pointer-events: auto;
     /* allow clicks */
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 0px;
 }
 
 #render-overlay {
@@ -506,9 +506,9 @@ input[type=range]::-moz-range-progress {
 }
 
 #watermark {
-    width: 48px;
+    
     /* default size */
-    height: auto;
+    height: 42px;
     display: block;
     opacity: 0.5;
     /* default opacity (adjustable) */
