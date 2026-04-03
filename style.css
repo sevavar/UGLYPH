@@ -1,0 +1,674 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font: 10px monospace, monospace;
+    overflow: hidden
+}
+
+body {
+    display: block;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    #canvas-container {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* @media only screen and (max-width: 768px) {
+    #ui-container {
+      display: none;
+    }
+  } */
+
+#ui-container {
+    width: 223px;
+    background-color: #444;
+    color: white;
+    padding: 10px;
+    padding-top: 0px;
+    padding-bottom: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 92vh;
+    box-sizing: border-box;
+    /* Floating draggable panel */
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+
+#canvas-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.button-container {
+
+    display: flex;
+    flex-wrap: nowrap;
+    /* Allow buttons to wrap to the next line if necessary */
+    margin: 0;
+}
+
+
+
+
+.text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+}
+
+.credits {
+    /* display: flex;
+    justify-content: space-between;
+    align-items: center; */
+    color: #fff;
+}
+
+.sectionName {
+    opacity: 0.4;
+    font-size: 10px;
+    padding-top: 8px;
+    margin-bottom: 4px;
+}
+
+.sectionToggle {
+    cursor: pointer;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    width: 200px;
+    user-select: none;
+    opacity: 0.6;
+    transition: opacity 100ms ease;
+}
+
+.sectionToggle:hover {
+    opacity: 1.0;
+}
+
+.section-arrow {
+    font-size: 10px;
+    opacity: 0.8;
+}
+
+.section-content {
+    overflow: hidden;
+}
+
+.section-content.collapsed {
+    display: none;
+}
+
+.footer {
+    /*padding-top: 0px;*/
+    padding-top:6px;
+    padding-bottom: 0px;
+}
+
+.label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 200px;
+    margin-bottom: 0;
+    padding-bottom: 2px;
+    cursor: grab;
+}
+
+.label-container:active {
+    cursor: grabbing;
+}
+
+.label-container:not(:first-child) {
+    display: none; /* Hide label containers except the first one (label1) */
+}
+
+.text-input-wrapper {
+    width: 200px;
+    margin: 3px 0;
+}
+
+.text-input {
+    width: 200px;
+    height: 32px;
+    background-color: #000;
+    color: white;
+    border: none;
+    font: 10px monospace, monospace;
+    padding: 0 10px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.text-input::placeholder {
+    color: #666;
+}
+
+.text-input:focus {
+    background-color: #222;
+}
+
+.slider-wrapper {
+    position: relative;
+    width: 200px;
+    margin: 4px 0;
+    height: 32px;
+}
+
+.slider-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    pointer-events: none;
+    z-index: 2;
+    font: 10px monospace, monospace;
+    color: white;
+    box-sizing: border-box;
+}
+
+
+a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+
+.button {
+    width: 200px;
+}
+
+.mediumbutton {
+    width: 100px;
+}
+
+.smallbutton {
+    width: 50px;
+}
+
+.export-button-row {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    margin: 4px 0;
+    gap: 4px;
+}
+
+.export-button {
+    width: 98px;
+    height: 32px;
+    background-color: #000;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 10px monospace, monospace;
+    outline: none;
+}
+
+.export-button:hover {
+    background-color: #BABABA;
+}
+
+.export-button:active {
+    background-color: #fff;
+    color: #000;
+}
+.icon-button-container {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    margin: 4px 0;
+    gap: 4px;
+}
+
+.icon-button {
+    width: 64px;
+    height: 64px;
+    background-color: #000;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    outline: none;
+}
+
+.icon-button:hover {
+    background-color: #BABABA;
+}
+
+.icon-button:active {
+    background-color: #fff;
+}
+
+.button-icon {
+    width: 30px;
+    height: 30px;
+    display: block;
+    pointer-events: none;
+}
+
+.slider,
+.button,
+.smallbutton,
+.mediumbutton {
+    display: block;
+    margin: 4px 0;
+    font: 10px monospace, monospace;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 0;
+    outline: none; /* Remove focus outline */
+}
+
+.slider:focus,
+.button:focus,
+.smallbutton:focus,
+.mediumbutton:focus,
+input[type=range]:focus {
+    outline: none; /* Prevent focus highlight on all UI elements */
+}
+
+.button,
+.smallbutton,
+.mediumbutton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #000;
+    color: white;
+    border: none;
+    padding: 10px;
+    white-space: nowrap;
+}
+
+
+.button:hover,
+.smallbutton:hover,
+.mediumbutton:hover {
+    background-color: #BABABA;
+}
+
+.button:active,
+.smallbutton:active {
+    background-color: #fff;
+    color: #000;
+
+
+}
+
+.smallbutton:active {
+    background-color: #ff0000;
+}
+
+.button:active,
+.mediumbutton.active {
+    background-color: #fff;
+    color: black;
+
+}
+
+.mediumbutton {
+    margin: 0;
+}
+
+
+
+
+.left-align,
+.center-align,
+.right-align {
+    flex: 1;
+    text-align: left;
+}
+
+.center-align {
+    text-align: center;
+}
+
+.right-align {
+    text-align: right;
+}
+
+
+
+/* KNOBS */
+
+.appearance-knob-row {
+    display: flex;
+    width: 200px;
+    margin: 6px 0 2px;
+    gap: 4px;
+}
+
+.knob-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.knob-dial {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #000;
+    position: relative;
+    cursor: ns-resize;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.knob-dial:hover {
+    background: #1a1a1a;
+}
+
+.knob-indicator {
+    position: absolute;
+    width: 2px;
+    height: 18px;
+    background: white;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 1px;
+    pointer-events: none;
+}
+
+.knob-label {
+    font: 9px monospace, monospace;
+    color: white;
+    opacity: 0.4;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.knob-val {
+    font: 10px monospace, monospace;
+    color: white;
+    opacity: 0.8;
+    text-align: center;
+}
+
+/* APPEARANCE SQUARES */
+
+.appearance-square-row {
+    display: flex;
+    width: 200px;
+    margin: 4px 0;
+    gap: 4px;
+}
+
+.app-square {
+    flex: 1;
+    aspect-ratio: 1 / 1;
+    background: #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 9px monospace, monospace;
+    color: white;
+    letter-spacing: 0.5px;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.app-square:hover {
+    outline: 1px solid #666;
+}
+
+.app-square:active {
+    outline: 1px solid white;
+}
+
+.toggle-square {
+    aspect-ratio: auto;
+    height: 40px;
+    opacity: 0.3;
+}
+
+.toggle-square.active {
+    opacity: 1;
+    background: #111;
+}
+
+/*SLIDER*/
+
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 200px;
+    height: 32px;
+    background: #000;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    overflow: hidden; /* Clip the box-shadow overflow */
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    height: 32px;
+    background: #000;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+input[type=range]::-moz-range-track {
+    height: 32px;
+    background: #000;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+input[type=range]::-ms-fill-lower,
+input[type=range]::-ms-fill-upper {
+    height: 32px;
+    background: #000;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+/* Chrome/Safari - progress bar fill using box-shadow trick */
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 32px;
+    width: 1px;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 0;
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
+    position: relative;
+}
+
+/* Firefox - progress bar fill */
+input[type=range]::-moz-range-thumb {
+    appearance: none;
+    height: 32px;
+    width: 1px;
+    background: transparent;
+    cursor: pointer;
+    border: none;
+    border-radius: 0;
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
+}
+
+input[type=range]::-ms-thumb {
+    appearance: none;
+    height: 32px;
+    width: 1px;
+    background: transparent;
+    cursor: pointer;
+    border: none;
+    box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox specific - fill the lower part of track */
+input[type=range]::-moz-range-progress {
+    background-color: rgba(255, 255, 255, 0.5);
+    height: 32px;
+}
+
+
+/*SCROLLBAR*/
+
+/* Chrome, Safari, Edge Scrollbar Styling */
+#ui-container::-webkit-scrollbar {
+    width: 2px;
+    /* Width of the scrollbar */
+}
+
+#ui-container::-webkit-scrollbar-track {
+    background: #444;
+    /* Color of the scrollbar track */
+}
+
+#ui-container::-webkit-scrollbar-thumb {
+    background-color: #aaa;
+    /* Scrollbar thumb color */
+    border-radius: 0px;
+    /* Rounded corners for the scrollbar thumb */
+    border: 0px solid #222;
+    /* Padding around the thumb */
+}
+
+#ui-container::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa;
+    /* Thumb color on hover */
+}
+
+#ui-container::-webkit-scrollbar-thumb:active {
+    background-color: #aaa;
+    /* Thumb color when active (on click) */
+}
+
+
+.header-retry-icon {
+    height: 14px;
+    width: auto;
+    display: inline-block;
+    filter: brightness(0) invert(1);
+    opacity: 1;
+    vertical-align: middle;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+#watermark-wrap {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 9999;
+    /* above the canvas */
+    pointer-events: auto;
+    /* allow clicks */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0px;
+}
+
+#render-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(186, 186, 186, 0.3);
+    /* #BABABA at 30% opacity */
+    pointer-events: none;
+    /* allow clicks to pass through */
+    z-index: 9998;
+    /* above canvas, below watermark */
+    display: none;
+    /* hidden by default */
+}
+
+#credits-text {
+    font-size: 10px;
+    color: #BABABA;
+    opacity: 0.5;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 1px;
+    font-family: monospace;
+    user-select: none;
+    -webkit-user-drag: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    transform: rotate(180deg);
+}
+
+#credits-text a {
+    opacity: 1.0;
+    transition: opacity 150ms ease;
+    color: #BABABA;
+}
+
+#credits-text a:hover {
+    color: white;
+    opacity: 1.0;
+}
+
+#watermark {
+    
+    /* default size */
+    height: 42px;
+    display: block;
+    opacity: 0.5;
+    /* default opacity (adjustable) */
+    transition: opacity 150ms ease;
+    cursor: pointer;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+#watermark:hover {
+    opacity: 1.0;
+}
+
+@media only screen and (max-width: 550px) {
+    #ui-container {
+        display: none;
+    }
+}
