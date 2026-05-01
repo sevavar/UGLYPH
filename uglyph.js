@@ -327,6 +327,7 @@ function initDraggablePanel() {
   let dragStartX, dragStartY, panelStartX, panelStartY;
 
   dragHandle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('a')) return;
     isDragging = true;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
