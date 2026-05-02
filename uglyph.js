@@ -1,5 +1,5 @@
 
-let version = "UGLYPH 1.2.1"
+let version = "UGLYPH"
 
 let shapes = []; // Each item: { points: [{x,y},...], velocities: [{vx,vy},...] }
 let importedShapes = null; // store for reload/reset
@@ -305,9 +305,10 @@ function updateColorSquares() {
   const strokeB = Math.round(blue(strokeColor || fillColor));
   const strokeCss = `rgb(${strokeR},${strokeG},${strokeB})`;
   if (buttons.recolor) {
+    const previewStrokeW = Math.max(1, Math.round(strokeW / 2));
     buttons.recolor.html('');
     buttons.recolor.elt.style.background = fillCss;
-    buttons.recolor.elt.style.boxShadow = `inset 0 0 0 ${strokeW}px ${strokeCss}`;
+    buttons.recolor.elt.style.boxShadow = `inset 0 0 0 ${previewStrokeW}px ${strokeCss}`;
     buttons.recolor.elt.style.color = strokeCss;
   }
   if (buttons.invertColors) {
@@ -321,6 +322,14 @@ function updateColorSquares() {
 function updateToggleSquares() {
   if (buttons.dots) buttons.dots.elt.classList.toggle('active', showDots);
   if (buttons.grid) buttons.grid.elt.classList.toggle('active', showGrid);
+}
+
+function getMobileWorkingYOffset() {
+  if (windowWidth > 600) return 0;
+  const panelEl = document.getElementById('ui-container');
+  if (!panelEl) return -(height * 0.25);
+  const rect = panelEl.getBoundingClientRect();
+  return rect.top / 2 - height / 2;
 }
 
 function createCollapsableSection(parent, title, isOpen) {
@@ -1415,7 +1424,7 @@ function draw() {
   background(bgColor);
 
   if (showGrid) {
-    const gridYOffset = windowWidth <= 600 ? -(height * 0.25) : 0;
+    const gridYOffset = getMobileWorkingYOffset();
     const step = 10;
     const majorStep = step * 10;
     const invR = 255 - red(bgColor);
@@ -2274,7 +2283,7 @@ function handleFileDrop(file) {
       // On mobile, offset shapes upward so they appear above the bottom UI panel.
       // Canvas translate stays at (width/2, height/2) — we move the shapes instead
       // so that cursor interaction and panel collision remain correctly calibrated.
-      const mobileYOffset = (windowWidth <= 600) ? -(height * 0.25) : 0;
+      const mobileYOffset = getMobileWorkingYOffset();
 
       // build final shapes array (apply scaling/centering)
        shapes = allShapes.map(s => {
