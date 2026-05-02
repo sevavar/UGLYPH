@@ -305,7 +305,7 @@ function updateColorSquares() {
   const strokeB = Math.round(blue(strokeColor || fillColor));
   const strokeCss = `rgb(${strokeR},${strokeG},${strokeB})`;
   if (buttons.recolor) {
-    buttons.recolor.html(`<span class="color-square-mark">${Math.round(strokeW)}X</span>`);
+    buttons.recolor.html('');
     buttons.recolor.elt.style.background = fillCss;
     buttons.recolor.elt.style.boxShadow = `inset 0 0 0 ${strokeW}px ${strokeCss}`;
     buttons.recolor.elt.style.color = strokeCss;
@@ -690,7 +690,7 @@ function createUI() {
 
     knobs.strokeW = makeKnob(appRow, 'STROKE', {
       continuous: { min: 1, max: 200, value: strokeW,
-        onChange: (v) => { strokeW = Math.round(v); }
+        onChange: (v) => { strokeW = Math.round(v); updateColorSquares(); }
       }
     });
 
@@ -867,6 +867,7 @@ function adjustStrokeWidth(amount) {
   if (strokeW < 1) {
     strokeW = 1;
   }
+  updateColorSquares();
 }
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);

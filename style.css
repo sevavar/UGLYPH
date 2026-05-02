@@ -450,13 +450,6 @@ input[type=range]:focus {
     box-sizing: border-box;
 }
 
-.color-square-mark {
-    font: 700 12px monospace, monospace;
-    letter-spacing: 0;
-    line-height: 1;
-    pointer-events: none;
-}
-
 .app-square:hover {
     outline: 1px solid #666;
 }
