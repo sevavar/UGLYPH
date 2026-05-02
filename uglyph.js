@@ -296,9 +296,20 @@ function makeKnob(parent, label, config) {
 
 function updateColorSquares() {
   if (!fillColor) return;
-  const r = Math.round(red(fillColor)), g = Math.round(green(fillColor)), b = Math.round(blue(fillColor));
-  const c = `rgb(${r},${g},${b})`;
-  if (buttons.recolor) buttons.recolor.elt.style.background = c;
+  const fillR = Math.round(red(fillColor));
+  const fillG = Math.round(green(fillColor));
+  const fillB = Math.round(blue(fillColor));
+  const fillCss = `rgb(${fillR},${fillG},${fillB})`;
+  const strokeR = Math.round(red(strokeColor || fillColor));
+  const strokeG = Math.round(green(strokeColor || fillColor));
+  const strokeB = Math.round(blue(strokeColor || fillColor));
+  const strokeCss = `rgb(${strokeR},${strokeG},${strokeB})`;
+  if (buttons.recolor) {
+    buttons.recolor.html(`<span class="color-square-mark">${Math.round(strokeW)}X</span>`);
+    buttons.recolor.elt.style.background = fillCss;
+    buttons.recolor.elt.style.boxShadow = `inset 0 0 0 ${strokeW}px ${strokeCss}`;
+    buttons.recolor.elt.style.color = strokeCss;
+  }
   if (buttons.invertColors) {
     const bgDark = red(bgColor) < 128;
     buttons.invertColors.elt.style.background = bgDark
@@ -383,16 +394,13 @@ function createUI() {
     headerStatusEl = header.elt.querySelector('.header-status');
     headerRightEl  = header.elt.querySelector('.label-right');
 
-    // Section 0: TYPE
-    let section0 = createP('TYPE');
-
-    section0.class('sectionName');
-    section0.parent(uiContainer);
+    // Section 0: TYPE OR IMPORT
+    let section0Content = createCollapsableSection(uiContainer, 'TYPE OR IMPORT', true);
 
     // Type Text Input Field
     let textInputWrapper = createDiv();
     textInputWrapper.class('text-input-wrapper');
-    textInputWrapper.parent(uiContainer);
+    textInputWrapper.parent(section0Content);
 
     textInput = createInput(pendingDefaultWord || '');
     textInput.attribute('placeholder', 'Your text here...');
@@ -416,19 +424,9 @@ function createUI() {
     });
     textInput.parent(textInputWrapper);
 
-    // Section 1: IMPORT (always visible)
-    let section1Header = createP('OR IMPORT');
-    section1Header.class('sectionName');
-    section1Header.parent(uiContainer);
-    let section1Content = createDiv();
-    section1Content.class('section-content');
-    section1Content.parent(uiContainer);
-
     // Upload SVG Button
     buttons.uploadSVG = createButton(`
-      <span class="left-align">⬆</span>
       <span class="center-align">Upload SVG</span>
-      <span class="right-align">⬆</span>
     `);
     buttons.uploadSVG.class('button');
     buttons.uploadSVG.mousePressed(() => {
@@ -472,7 +470,7 @@ function createUI() {
       // Trigger click
       input.click();
     });
-    buttons.uploadSVG.parent(section1Content);
+    buttons.uploadSVG.parent(section0Content);
 
     // Section 2: MUTATION (collapsable, open by default)
     let section2Content = createCollapsableSection(uiContainer, 'MUTATION', true);
@@ -1267,6 +1265,29 @@ function reloadWindow() {
         }
       }
     }
+
+    if (appliedScale !== 1) {
+      let sumX = 0;
+      let sumY = 0;
+      let pointCount = 0;
+      for (let s = 0; s < shapes.length; s++) {
+        const shp = shapes[s];
+        for (let i = 0; i < shp.points.length; i++) {
+          sumX += shp.points[i].x;
+          sumY += shp.points[i].y;
+          pointCount++;
+        }
+      }
+      const centerX = pointCount > 0 ? sumX / pointCount : 0;
+      const centerY = pointCount > 0 ? sumY / pointCount : 0;
+      for (let s = 0; s < shapes.length; s++) {
+        const shp = shapes[s];
+        for (let i = 0; i < shp.points.length; i++) {
+          shp.points[i].x = centerX + (shp.points[i].x - centerX) * appliedScale;
+          shp.points[i].y = centerY + (shp.points[i].y - centerY) * appliedScale;
+        }
+      }
+    }
   } else {
     // Fallback: re-seed velocities
     for (let s = 0; s < shapes.length; s++) {
@@ -1303,7 +1324,7 @@ function applyPanelCollision() {
   const cx = width / 2, cy = height / 2;
   const x1 = rect.left - cx,  y1 = rect.top - cy;
   const x2 = rect.right - cx, y2 = rect.bottom - cy;
-  const margin = 20;
+  const margin = windowWidth <= 600 ? 0 : 20;
 
   for (let s = 0; s < shapes.length; s++) {
     const shp = shapes[s];
@@ -1393,7 +1414,9 @@ function draw() {
   background(bgColor);
 
   if (showGrid) {
+    const gridYOffset = windowWidth <= 600 ? -(height * 0.25) : 0;
     const step = 10;
+    const majorStep = step * 10;
     const invR = 255 - red(bgColor);
     const invG = 255 - green(bgColor);
     const invB = 255 - blue(bgColor);
@@ -1403,17 +1426,19 @@ function draw() {
     const cols = ceil(width / step) + 1;
     const rows = ceil(height / step) + 1;
     const startX = -floor(cols / 2) * step;
-    const startY = -floor(rows / 2) * step;
+    const startY = -floor(rows / 2) * step + gridYOffset;
     for (let i = 0; i <= cols; i++) {
       const x = startX + i * step;
-      stroke(i % 10 === 0 ? gridColorThick : gridColor);
-      strokeWeight(i % 10 === 0 ? 1 : 0.5);
-      line(x, -height / 2, x, height / 2);
+      const isMajorX = Math.abs(x % majorStep) < 0.001;
+      stroke(isMajorX ? gridColorThick : gridColor);
+      strokeWeight(isMajorX ? 1 : 0.5);
+      line(x, -height / 2 + gridYOffset, x, height / 2 + gridYOffset);
     }
     for (let j = 0; j <= rows; j++) {
       const y = startY + j * step;
-      stroke(j % 10 === 0 ? gridColorThick : gridColor);
-      strokeWeight(j % 10 === 0 ? 1 : 0.5);
+      const isMajorY = Math.abs((y - gridYOffset) % majorStep) < 0.001;
+      stroke(isMajorY ? gridColorThick : gridColor);
+      strokeWeight(isMajorY ? 1 : 0.5);
       line(-width / 2, y, width / 2, y);
     }
   }

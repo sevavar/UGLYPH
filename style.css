@@ -152,21 +152,23 @@ canvas {
 .text-input {
     width: 200px;
     height: 32px;
-    background-color: #000;
+    background-color: #111;
     color: white;
-    border: none;
+    border: 1px solid #666;
     font: 10px monospace, monospace;
     padding: 0 10px;
     box-sizing: border-box;
     outline: none;
+    caret-color: #fff;
 }
 
 .text-input::placeholder {
-    color: #666;
+    color: #888;
 }
 
 .text-input:focus {
-    background-color: #222;
+    background-color: #181818;
+    border-color: #fff;
 }
 
 .slider-wrapper {
@@ -306,10 +308,12 @@ input[type=range]:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 32px;
     background-color: #000;
     color: white;
     border: none;
-    padding: 10px;
+    padding: 0 10px;
+    box-sizing: border-box;
     white-space: nowrap;
 }
 
@@ -446,6 +450,13 @@ input[type=range]:focus {
     box-sizing: border-box;
 }
 
+.color-square-mark {
+    font: 700 12px monospace, monospace;
+    letter-spacing: 0;
+    line-height: 1;
+    pointer-events: none;
+}
+
 .app-square:hover {
     outline: 1px solid #666;
 }
@@ -511,8 +522,8 @@ input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     height: 32px;
-    width: 1px;
-    background: transparent;
+    width: 2px;
+    background: #fff;
     cursor: pointer;
     border-radius: 0;
     box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
@@ -523,8 +534,8 @@ input[type=range]::-webkit-slider-thumb {
 input[type=range]::-moz-range-thumb {
     appearance: none;
     height: 32px;
-    width: 1px;
-    background: transparent;
+    width: 2px;
+    background: #fff;
     cursor: pointer;
     border: none;
     border-radius: 0;
@@ -534,8 +545,8 @@ input[type=range]::-moz-range-thumb {
 input[type=range]::-ms-thumb {
     appearance: none;
     height: 32px;
-    width: 1px;
-    background: transparent;
+    width: 2px;
+    background: #fff;
     cursor: pointer;
     border: none;
     box-shadow: -200px 0 0 199px rgba(255, 255, 255, 0.5);
@@ -674,9 +685,13 @@ input[type=range]::-moz-range-progress {
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 52vh;
+        height: 50vh;
+        max-height: 50vh;
         padding: 0px 12px 12px;
         border-top: 1px solid #666;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         /* let inputs handle their own touch gestures */
     }
 
@@ -737,6 +752,7 @@ input[type=range]::-moz-range-progress {
 
     .button {
         width: 100%;
+        height: 40px;
     }
 
     .export-button-row {
@@ -765,6 +781,7 @@ input[type=range]::-moz-range-progress {
 
     .mediumbutton {
         flex: 1;
+        height: 40px;
     }
 
     /* scrollbar hidden on mobile to save space */
