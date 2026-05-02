@@ -1,5 +1,5 @@
 
-let version = "UGLYPH v1.1"
+let version = "UGLYPH 1.2.1"
 
 let shapes = []; // Each item: { points: [{x,y},...], velocities: [{vx,vy},...] }
 let importedShapes = null; // store for reload/reset
@@ -22,8 +22,8 @@ let bgColor;
 let fillColor;
 let strokeColor; // Separate stroke color for "dual" fill mode
 const _fillModes = ['filled', 'outline', 'dual'];
-let fillMode = _fillModes[Math.floor(Math.random() * _fillModes.length)];
-let strokeW = Math.floor(Math.random() * 30) + 1; // 1–30
+let fillMode = 'dual';
+let strokeW = 5;
 let cursorStrokeW;
 let cursorColor = 'red';
 let showGrid = true;
@@ -68,6 +68,7 @@ let currentWidth, currentHeight;
 
 
 let header; // Global label reference for header with recording status
+let headerStatusEl, headerRightEl; // Cached sub-elements — updated instead of replacing the whole header
 let vertexLabel; // Global label reference for vertex count slider
 let textInput; // Global reference for text input field
 let appliedScale = 1;
@@ -251,9 +252,7 @@ function makeKnob(parent, label, config) {
     e.preventDefault();
   });
 
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const dy = startY - e.clientY;
+  function applyDrag(dy) {
     if (config.continuous) {
       const { min, max, onChange } = config.continuous;
       config.continuous.value = Math.max(min, Math.min(max, startVal + (dy / 100) * (max - min)));
@@ -267,9 +266,30 @@ function makeKnob(parent, label, config) {
       }
     }
     sync();
+  }
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    applyDrag(startY - e.clientY);
   });
 
   document.addEventListener('mouseup', () => { dragging = false; });
+
+  // Touch support
+  dial.elt.addEventListener('touchstart', e => {
+    dragging = true;
+    startY = e.touches[0].clientY;
+    startVal = config.continuous ? config.continuous.value : config.discrete.index;
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    applyDrag(startY - e.touches[0].clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => { dragging = false; });
 
   return { dial, sync, config };
 }
@@ -328,6 +348,7 @@ function initDraggablePanel() {
 
   dragHandle.addEventListener('mousedown', (e) => {
     if (e.target.closest('a')) return;
+    if (window.innerWidth <= 600) return; // disabled on mobile
     isDragging = true;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
@@ -350,13 +371,17 @@ function createUI() {
   if (showUI === true) {
     let uiContainer = select('#ui-container');
 
-    // Label 1 - Header with recording status
-    header = createP(`
-      <span class="label-left">UGLYPH v1.0</span>
-      <span class="label-right"><a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-    `);
+    // Label 1 - Header with recording status.
+    // The <a> is created once and never replaced so click always works.
+    header = createP('');
     header.class('label-container');
     header.parent(uiContainer);
+    header.elt.innerHTML = `
+      <span class="label-left">${version}</span>
+      <span class="label-right"><span class="header-status"></span><a href="https://retry.studio" target="_blank" rel="noopener noreferrer"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
+    `;
+    headerStatusEl = header.elt.querySelector('.header-status');
+    headerRightEl  = header.elt.querySelector('.label-right');
 
     // Section 0: TYPE
     let section0 = createP('TYPE');
@@ -369,7 +394,7 @@ function createUI() {
     textInputWrapper.class('text-input-wrapper');
     textInputWrapper.parent(uiContainer);
 
-    textInput = createInput('');
+    textInput = createInput(pendingDefaultWord || '');
     textInput.attribute('placeholder', 'Your text here...');
     textInput.class('text-input');
     textInput.input(() => {
@@ -522,10 +547,23 @@ function createUI() {
       sizeLabel.html(`<span class="label-left">Size</span><span class="label-right">${blobSize}</span>`);
       if (oldSize > 0) {
         const sf = blobSize / oldSize;
+        // Compute centroid of all shapes so scaling stays anchored to the shape,
+        // not to the canvas origin (which diverges on mobile due to the Y offset).
+        let sumX = 0, sumY = 0, count = 0;
+        for (let s = 0; s < shapes.length; s++) {
+          for (let i = 0; i < shapes[s].points.length; i++) {
+            sumX += shapes[s].points[i].x;
+            sumY += shapes[s].points[i].y;
+            count++;
+          }
+        }
+        const cx = count > 0 ? sumX / count : 0;
+        const cy = count > 0 ? sumY / count : 0;
         for (let s = 0; s < shapes.length; s++) {
           const shp = shapes[s];
           for (let i = 0; i < shp.points.length; i++) {
-            shp.points[i].x *= sf; shp.points[i].y *= sf;
+            shp.points[i].x = cx + (shp.points[i].x - cx) * sf;
+            shp.points[i].y = cy + (shp.points[i].y - cy) * sf;
           }
         }
         appliedScale *= sf;
@@ -835,6 +873,16 @@ function adjustStrokeWidth(amount) {
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   isResized = true;
+}
+// Prevent the page from scrolling when touching the canvas,
+// but allow normal interaction with UI elements (inputs, sliders, buttons)
+function touchStarted(event) {
+  if (event && event.target && event.target.closest('#ui-container')) return;
+  return false;
+}
+function touchMoved(event) {
+  if (event && event.target && event.target.closest('#ui-container')) return;
+  return false;
 }
 function keyPressed() {
   // Don't process keyboard shortcuts when text input is focused
@@ -1299,50 +1347,37 @@ function applyPanelCollision() {
 
 function draw() {
 
-  // Update recording status in header (check in priority order)
-  if (showDoneMessage) {
-    // Show "Done!" for 90 frames (highest priority - overrides everything)
-    if (frameCount - doneMessageStartFrame < 90) {
-      header.html(`
-        <span class="label-left">${version}</span>
-        <span class="label-right" style="color: #00FF2F;">Done! <a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-      `);
-    } else {
-      // Clear done message after 90 frames
-      showDoneMessage = false;
-      header.html(`
-        <span class="label-left">${version}</span>
-        <span class="label-right"><a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-      `);
-    }
-  } else if (gifRendering && !showDoneMessage) {
-    // GIF is rendering (only show if not done yet)
-    header.html(`
-      <span class="label-left">${version}</span>
-      <span class="label-right" style="color: orange;">Rendering... <a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-    `);
-  } else if (recording || recordingGif) {
-    let currentFrames;
-    if (recording) {
-      currentFrames = recordedFrames;
-    } else {
-      // For GIF, calculate frames since recording started
-      currentFrames = Math.min(frameCount - gifStartFrame, numFrames);
-      
-      // When GIF reaches target frames, switch to rendering state
-      if (currentFrames >= numFrames && recordingGif && !gifRendering) {
-        gifRendering = true;
+  // Update recording status — only touch the status text span, never the <a> element.
+  // Replacing the whole inner HTML each frame destroys the <a> node, breaking clicks.
+  if (headerStatusEl && headerRightEl) {
+    if (showDoneMessage) {
+      if (frameCount - doneMessageStartFrame < 90) {
+        headerStatusEl.textContent = 'Done! ';
+        headerRightEl.style.color = '#00FF2F';
+      } else {
+        showDoneMessage = false;
+        headerStatusEl.textContent = '';
+        headerRightEl.style.color = '';
       }
+    } else if (gifRendering) {
+      headerStatusEl.textContent = 'Rendering... ';
+      headerRightEl.style.color = 'orange';
+    } else if (recording || recordingGif) {
+      let currentFrames;
+      if (recording) {
+        currentFrames = recordedFrames;
+      } else {
+        currentFrames = Math.min(frameCount - gifStartFrame, numFrames);
+        if (currentFrames >= numFrames && recordingGif && !gifRendering) {
+          gifRendering = true;
+        }
+      }
+      headerStatusEl.textContent = `${currentFrames} / ${numFrames} ● `;
+      headerRightEl.style.color = 'red';
+    } else {
+      headerStatusEl.textContent = '';
+      headerRightEl.style.color = '';
     }
-    header.html(`
-      <span class="label-left">${version}</span>
-      <span class="label-right" style="color: red;">${currentFrames} / ${numFrames} ● <a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-    `);
-  } else if (header) {
-    header.html(`
-      <span class="label-left">${version}</span>
-      <span class="label-right"><a href="https://retry.studio" target="_blank" rel="noopener"><img src="./assets/retry.svg" class="header-retry-icon"></a></span>
-    `);
   }
 
   // Sync play/pause button icon based on smoothingEnabled state
@@ -2210,9 +2245,14 @@ function handleFileDrop(file) {
       const centerOffsetX = (minX + maxX) / 2;
       const centerOffsetY = (minY + maxY) / 2;
 
+      // On mobile, offset shapes upward so they appear above the bottom UI panel.
+      // Canvas translate stays at (width/2, height/2) — we move the shapes instead
+      // so that cursor interaction and panel collision remain correctly calibrated.
+      const mobileYOffset = (windowWidth <= 600) ? -(height * 0.25) : 0;
+
       // build final shapes array (apply scaling/centering)
        shapes = allShapes.map(s => {
-        const pts = s.points.map(p => ({ x: (p.x - centerOffsetX) * scale, y: (p.y - centerOffsetY) * scale }));
+        const pts = s.points.map(p => ({ x: (p.x - centerOffsetX) * scale, y: (p.y - centerOffsetY) * scale + mobileYOffset }));
         const vels = s.velocities.map(() => ({ vx: random(-mutationSpeed, mutationSpeed), vy: random(-mutationSpeed, mutationSpeed) }));
         return { points: pts, velocities: vels, contours: s.contours, fillMode: fillMode };
       });

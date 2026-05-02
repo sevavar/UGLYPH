@@ -131,7 +131,7 @@ canvas {
     justify-content: space-between;
     align-items: center;
     width: 200px;
-    margin-bottom: 0;
+    margin-top: 10;
     padding-bottom: 2px;
     cursor: grab;
 }
@@ -221,7 +221,7 @@ a {
 }
 
 .export-button {
-    width: 98px;
+    width: 100%;
     height: 32px;
     background-color: #000;
     color: white;
@@ -368,7 +368,7 @@ input[type=range]:focus {
 .appearance-knob-row {
     display: flex;
     width: 200px;
-    margin: 6px 0 2px;
+    margin: 20px 0 20px;
     gap: 4px;
 }
 
@@ -667,8 +667,119 @@ input[type=range]::-moz-range-progress {
     opacity: 1.0;
 }
 
-@media only screen and (max-width: 550px) {
+@media only screen and (max-width: 600px) {
     #ui-container {
-        display: none;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: 52vh;
+        padding: 0px 12px 12px;
+        border-top: 1px solid #666;
+        /* let inputs handle their own touch gestures */
+    }
+
+    /* prevent the header drag handle from showing grab cursor */
+    .label-container {
+        width: 100%;
+        cursor: default;
+    }
+
+    .label-container:active {
+        cursor: default;
+    }
+
+    .sectionToggle {
+        width: 100%;
+    }
+
+    .text-input-wrapper {
+        width: 100%;
+    }
+
+    .text-input {
+        width: 100%;
+        height: 40px; /* larger tap target */
+        touch-action: manipulation; /* fast tap, no zoom delay */
+    }
+
+    .slider-wrapper {
+        width: 100%;
+        height: 40px;
+    }
+
+    .slider-label {
+        width: 100%;
+    }
+
+    input[type=range] {
+        width: 100%;
+        height: 40px; /* larger tap target */
+        touch-action: none; /* let the slider handle all touch directions */
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+        height: 40px;
+    }
+
+    input[type=range]::-moz-range-track {
+        height: 40px;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        height: 40px;
+    }
+
+    input[type=range]::-moz-range-thumb {
+        height: 40px;
+    }
+
+    .button {
+        width: 100%;
+    }
+
+    .export-button-row {
+        width: 100%;
+    }
+
+    .icon-button-container {
+        width: 100%;
+    }
+
+    .icon-button {
+        flex: 1;
+    }
+
+    .appearance-knob-row {
+        width: 100%;
+    }
+
+    .appearance-square-row {
+        width: 100%;
+    }
+
+    .button-container {
+        width: 100%;
+    }
+
+    .mediumbutton {
+        flex: 1;
+    }
+
+    /* scrollbar hidden on mobile to save space */
+    #ui-container::-webkit-scrollbar {
+        width: 0;
+    }
+
+    /* enlarge retry logo tap target */
+    .label-right a {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 0 10px 20px;
+    }
+
+    .header-retry-icon {
+        height: 20px;
     }
 }
