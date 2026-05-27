@@ -1,6 +1,10 @@
 
 let version = "UGLYPH"
 
+let isMobileKeyboardOpen = false; // true while iOS virtual keyboard is visible
+let cachedMobileYOffset = null;   // offset snapshot taken at focus, before keyboard shifts the panel
+let cachedPanelRect = null;       // panel BoundingClientRect snapshot — frozen during keyboard animation
+
 let shapes = []; // Each item: { points: [{x,y},...], velocities: [{vx,vy},...] }
 let importedShapes = null; // store for reload/reset
 
@@ -204,6 +208,10 @@ let fillModeKnob = null; // global ref so toggleFillMode() can sync the knob
 let knobs = {};          // all knob references for external sync
 
 function makeKnob(parent, label, config) {
+  // On mobile, replace continuous knobs with standard sliders
+  if (windowWidth <= 600 && config.continuous) {
+    return makeMobileSlider(parent, label, config);
+  }
   // config.continuous: { min, max, value, onChange }
   // config.discrete:   { modes: [], index, onChange }
   const wrapper = createDiv();
@@ -294,6 +302,37 @@ function makeKnob(parent, label, config) {
   return { dial, sync, config };
 }
 
+// Mobile-only: creates a standard labeled slider with the same API as makeKnob
+// so knobs.*.sync() and knobs.*.config.continuous.value still work.
+function makeMobileSlider(parent, label, config) {
+  const c = config.continuous;
+  const wrapper = createDiv();
+  wrapper.class('slider-wrapper');
+  wrapper.parent(parent);
+
+  const lbl = createDiv(`<span class="label-left">${label}</span><span class="label-right">${Math.round(c.value)}</span>`);
+  lbl.class('slider-label');
+  lbl.parent(wrapper);
+
+  const sl = createSlider(c.min, c.max, c.value, 1);
+  sl.class('slider');
+  sl.input(() => {
+    c.value = sl.value();
+    lbl.html(`<span class="label-left">${label}</span><span class="label-right">${Math.round(c.value)}</span>`);
+    if (c.onChange) c.onChange(c.value);
+  });
+  sl.parent(wrapper);
+
+  return {
+    sync: () => {
+      sl.value(c.value);
+      lbl.html(`<span class="label-left">${label}</span><span class="label-right">${Math.round(c.value)}</span>`);
+    },
+    config,
+    dial: sl
+  };
+}
+
 function updateColorSquares() {
   if (!fillColor) return;
   const fillR = Math.round(red(fillColor));
@@ -325,6 +364,10 @@ function updateToggleSquares() {
 }
 
 function getMobileWorkingYOffset() {
+  // While the keyboard is open, iOS pushes the UI panel upward so
+  // getBoundingClientRect() returns a shifted value. Return the snapshot
+  // taken at focus time instead so shape placement stays stable.
+  if (cachedMobileYOffset !== null) return cachedMobileYOffset;
   if (windowWidth > 600) return 0;
   const panelEl = document.getElementById('ui-container');
   if (!panelEl) return -(height * 0.25);
@@ -433,9 +476,39 @@ function createUI() {
     });
     textInput.parent(textInputWrapper);
 
+    textInput.elt.addEventListener('focus', () => {
+      isMobileKeyboardOpen = true;
+      if (windowWidth <= 600) {
+        // Snapshot the Y offset now, before the keyboard animates the panel upward.
+        // All shape placement calls while the keyboard is open will use this value.
+        cachedMobileYOffset = getMobileWorkingYOffset();
+        // Freeze the panel's collision rect so it can't ram through the shape
+        // as iOS slides the panel upward during the keyboard open animation.
+        const panelEl = document.getElementById('ui-container');
+        if (panelEl) cachedPanelRect = panelEl.getBoundingClientRect();
+      }
+      // Pin canvas CSS dimensions so the shrunken viewport can't visually
+      // compress the canvas display area while the keyboard is visible.
+      canvas.elt.style.width  = width  + 'px';
+      canvas.elt.style.height = height + 'px';
+    });
+    textInput.elt.addEventListener('blur', () => {
+      isMobileKeyboardOpen = false;
+      cachedMobileYOffset  = null;
+      cachedPanelRect      = null;
+      // Wait for the keyboard to fully dismiss and the viewport to restore its
+      // original height before releasing the pinned canvas dimensions.
+      setTimeout(() => {
+        canvas.elt.style.width  = '';
+        canvas.elt.style.height = '';
+        resizeCanvas(windowWidth, windowHeight);
+        isResized = true;
+      }, 350);
+    });
+
     // Upload SVG Button
     buttons.uploadSVG = createButton(`
-      <span class="center-align">Upload SVG</span>
+      <span class="center-align">UPLOAD SVG</span>
     `);
     buttons.uploadSVG.class('button');
     buttons.uploadSVG.mousePressed(() => {
@@ -540,7 +613,7 @@ function createUI() {
     sizeSliderWrapper.parent(section2Content);
 
     const sizeLabel = createDiv(`
-      <span class="label-left">Size</span>
+      <span class="label-left">SIZE</span>
       <span class="label-right">${blobSize}</span>
     `);
     sizeLabel.class('slider-label');
@@ -551,7 +624,7 @@ function createUI() {
     sliders.size.input(() => {
       let oldSize = blobSize;
       blobSize = sliders.size.value();
-      sizeLabel.html(`<span class="label-left">Size</span><span class="label-right">${blobSize}</span>`);
+      sizeLabel.html(`<span class="label-left">SIZE</span><span class="label-right">${blobSize}</span>`);
       if (oldSize > 0) {
         const sf = blobSize / oldSize;
         // Compute centroid of all shapes so scaling stays anchored to the shape,
@@ -584,9 +657,15 @@ function createUI() {
     sliders.size.parent(sizeSliderWrapper);
 
     // Mutation knob row: Vertices + Intensity + Collision
-    const mutRow = createDiv();
-    mutRow.class('appearance-knob-row');
-    mutRow.parent(section2Content);
+    // On mobile use section2Content directly so sliders span full width
+    let mutRow;
+    if (windowWidth > 600) {
+      mutRow = createDiv();
+      mutRow.class('appearance-knob-row');
+      mutRow.parent(section2Content);
+    } else {
+      mutRow = section2Content;
+    }
 
     knobs.amount = makeKnob(mutRow, 'VERTICES', {
       continuous: { min: 100, max: 10000, value: amount,
@@ -629,7 +708,7 @@ function createUI() {
 
      // Repulse Button
     buttons.repulseButton = createButton(`
-      <span class="center-align"><•> Push</span>
+      <span class="center-align"><•> PUSH</span>
     `);
     buttons.repulseButton.class('mediumbutton');
     buttons.repulseButton.mousePressed(() => setBrushMode('repulse'));
@@ -637,7 +716,7 @@ function createUI() {
 
     // Attract Button
     buttons.attractButton = createButton(`
-      <span class="center-align">>•< Pull</span>
+      <span class="center-align">>•< PULL</span>
     `);
     buttons.attractButton.class('mediumbutton');
     buttons.attractButton.mousePressed(() => setBrushMode('attract'));
@@ -647,7 +726,7 @@ function createUI() {
 
     buttons.explode = createButton(`
       <span class="left-align">✱</span>
-      <span class="center-align">Explode</span>
+      <span class="center-align">EXPLODE</span>
       <span class="right-align">X</span>`);
 
     buttons.explode.class('button');
@@ -655,9 +734,15 @@ function createUI() {
     buttons.explode.parent(section3Content);
 
     // Interaction knob row: Radius + Force + Explosion
-    const intRow = createDiv();
-    intRow.class('appearance-knob-row');
-    intRow.parent(section3Content);
+    // On mobile use section3Content directly so sliders span full width
+    let intRow;
+    if (windowWidth > 600) {
+      intRow = createDiv();
+      intRow.class('appearance-knob-row');
+      intRow.parent(section3Content);
+    } else {
+      intRow = section3Content;
+    }
 
     knobs.touchRadius = makeKnob(intRow, 'RADIUS', {
       continuous: { min: 10, max: 200, value: touchRadius,
@@ -681,21 +766,47 @@ function createUI() {
     let section4Content = createCollapsableSection(uiContainer, 'APPEARANCE', true);
 
     // Appearance knob row: Fill Mode + Stroke Width
-    const appRow = createDiv();
-    appRow.class('appearance-knob-row');
-    appRow.parent(section4Content);
+    // On mobile: skip the row container; FILL becomes a cycle button, STROKE becomes a slider
+    let appRow;
+    if (windowWidth > 600) {
+      appRow = createDiv();
+      appRow.class('appearance-knob-row');
+      appRow.parent(section4Content);
+    } else {
+      appRow = section4Content;
+    }
 
     const fillModes = ['outline', 'filled', 'dual'];
-    const fillKnob = makeKnob(appRow, 'FILL', {
-      discrete: { modes: fillModes, index: Math.max(0, fillModes.indexOf(fillMode)),
-        onChange: (i) => {
-          fillMode = fillModes[i];
-          for (let s = 0; s < shapes.length; s++) shapes[s].fillMode = fillMode;
+    if (windowWidth <= 600) {
+      // Mobile: FILL cycle button (shows current mode, taps cycle through modes)
+      const fillBtn = createButton(`<span class="label-left">FILL</span><span class="label-right">${fillMode}</span>`);
+      fillBtn.class('button');
+      fillBtn.mousePressed(() => {
+        const ni = (fillModes.indexOf(fillMode) + 1) % fillModes.length;
+        fillMode = fillModes[ni];
+        for (let s = 0; s < shapes.length; s++) shapes[s].fillMode = fillMode;
+        fillBtn.html(`<span class="label-left">FILL</span><span class="label-right">${fillMode}</span>`);
+      });
+      fillBtn.parent(section4Content);
+      // Provide a .value(i) so toggleFillMode() can sync the button label
+      fillBtn.value = (i) => {
+        fillMode = fillModes[i];
+        fillBtn.html(`<span class="label-left">FILL</span><span class="label-right">${fillMode}</span>`);
+      };
+      fillModeKnob = { sync: () => { fillBtn.html(`<span class="label-left">FILL</span><span class="label-right">${fillMode}</span>`); }, config: { discrete: { modes: fillModes, index: Math.max(0, fillModes.indexOf(fillMode)) } }, dial: fillBtn };
+      buttons.switchStyle = fillBtn;
+    } else {
+      const fillKnob = makeKnob(appRow, 'FILL', {
+        discrete: { modes: fillModes, index: Math.max(0, fillModes.indexOf(fillMode)),
+          onChange: (i) => {
+            fillMode = fillModes[i];
+            for (let s = 0; s < shapes.length; s++) shapes[s].fillMode = fillMode;
+          }
         }
-      }
-    });
-    fillModeKnob = fillKnob;
-    buttons.switchStyle = fillKnob.dial;
+      });
+      fillModeKnob = fillKnob;
+      buttons.switchStyle = fillKnob.dial;
+    }
 
     knobs.strokeW = makeKnob(appRow, 'STROKE', {
       continuous: { min: 1, max: 200, value: strokeW,
@@ -742,7 +853,7 @@ function createUI() {
     numFramesSliderWrapper.parent(section5Content);
 
     const numFramesLabel = createDiv(`
-      <span class="label-left">Frames (GIF, MP4)</span>
+      <span class="label-left">FRAMES (GIF, MP4)</span>
       <span class="label-right">${numFrames}</span>
     `);
     numFramesLabel.class('slider-label');
@@ -752,7 +863,7 @@ function createUI() {
     sliders.numFrames.class('slider');
     sliders.numFrames.input(() => {
       numFrames = sliders.numFrames.value();
-      numFramesLabel.html(`<span class="label-left">Frames (GIF, MP4)</span><span class="label-right">${numFrames}</span>`);
+      numFramesLabel.html(`<span class="label-left">FRAMES (GIF, MP4)</span><span class="label-right">${numFrames}</span>`);
       gifDuration = numFrames;
     });
     sliders.numFrames.parent(numFramesSliderWrapper);
@@ -879,6 +990,10 @@ function adjustStrokeWidth(amount) {
   updateColorSquares();
 }
 function windowResized() {
+  // Skip resize while the iOS virtual keyboard is visible — it shrinks
+  // window.innerHeight which would distort the canvas. The blur handler
+  // triggers the resize once the keyboard is fully dismissed.
+  if (isMobileKeyboardOpen) return;
   resizeCanvas(windowWidth, windowHeight);
   isResized = true;
 }
@@ -1330,7 +1445,10 @@ function applyPanelCollision() {
   const panelEl = document.getElementById('ui-container');
   if (!panelEl || shapes.length === 0) return;
 
-  const rect = panelEl.getBoundingClientRect();
+  // While the iOS keyboard is animating open/closed the panel moves rapidly
+  // upward. Use the rect snapshot taken at focus time so the collision box
+  // stays frozen — otherwise the moving panel physically rams through the shape.
+  const rect = cachedPanelRect || panelEl.getBoundingClientRect();
   const cx = width / 2, cy = height / 2;
   const x1 = rect.left - cx,  y1 = rect.top - cy;
   const x2 = rect.right - cx, y2 = rect.bottom - cy;

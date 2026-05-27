@@ -48,8 +48,8 @@ canvas {
 
 #canvas-container {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
     background-color: black;
     overflow: hidden;
     position: fixed;
@@ -58,6 +58,7 @@ canvas {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    transform: translateZ(0);
 }
 
 .button-container {
@@ -265,12 +266,18 @@ a {
     outline: none;
 }
 
-.icon-button:hover {
-    background-color: #BABABA;
+@media (hover: hover) {
+    .icon-button:hover {
+        background-color: #BABABA;
+    }
 }
 
 .icon-button:active {
     background-color: #fff;
+}
+
+.icon-button:active .button-icon {
+    filter: invert(1);
 }
 
 .button-icon {
@@ -683,10 +690,25 @@ input[type=range]::-moz-range-progress {
         min-height: 50dvh;
         padding: 0px 12px 12px;
         border-top: 1px solid #666;
-        overflow-y: auto;
+        overflow-y: scroll;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
-        /* let inputs handle their own touch gestures */
+    }
+
+    /* Persistent custom scrollbar — forces WebKit to use a classic (non-overlay, non-auto-hiding)
+       scrollbar instead of the default rounded iOS indicator */
+    #ui-container::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    #ui-container::-webkit-scrollbar-track {
+        background: #444;
+    }
+
+    #ui-container::-webkit-scrollbar-thumb {
+        background-color: #aaa;
+        border-radius: 0px;
+        border: 0px solid #222;
     }
 
     /* prevent the header drag handle from showing grab cursor */
@@ -725,7 +747,7 @@ input[type=range]::-moz-range-progress {
     input[type=range] {
         width: 100%;
         height: 40px; /* larger tap target */
-        touch-action: none; /* let the slider handle all touch directions */
+        touch-action: pan-y; /* vertical swipe scrolls the panel; horizontal swipe adjusts the slider */
     }
 
     input[type=range]::-webkit-slider-runnable-track {
